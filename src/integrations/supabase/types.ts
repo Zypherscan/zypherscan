@@ -14,7 +14,151 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      blocks: {
+        Row: {
+          cached_at: string
+          difficulty: number | null
+          hash: string
+          height: number
+          merkle_root: string | null
+          nonce: string | null
+          size: number | null
+          timestamp: string
+          tx_count: number | null
+          version: number | null
+        }
+        Insert: {
+          cached_at?: string
+          difficulty?: number | null
+          hash: string
+          height: number
+          merkle_root?: string | null
+          nonce?: string | null
+          size?: number | null
+          timestamp: string
+          tx_count?: number | null
+          version?: number | null
+        }
+        Update: {
+          cached_at?: string
+          difficulty?: number | null
+          hash?: string
+          height?: number
+          merkle_root?: string | null
+          nonce?: string | null
+          size?: number | null
+          timestamp?: string
+          tx_count?: number | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          block_height: number | null
+          cached_at: string
+          locktime: number | null
+          shielded_inputs: number | null
+          shielded_outputs: number | null
+          timestamp: string | null
+          txid: string
+          value_balance: number | null
+          version: number | null
+          vin_count: number | null
+          vout_count: number | null
+        }
+        Insert: {
+          block_height?: number | null
+          cached_at?: string
+          locktime?: number | null
+          shielded_inputs?: number | null
+          shielded_outputs?: number | null
+          timestamp?: string | null
+          txid: string
+          value_balance?: number | null
+          version?: number | null
+          vin_count?: number | null
+          vout_count?: number | null
+        }
+        Update: {
+          block_height?: number | null
+          cached_at?: string
+          locktime?: number | null
+          shielded_inputs?: number | null
+          shielded_outputs?: number | null
+          timestamp?: string | null
+          txid?: string
+          value_balance?: number | null
+          version?: number | null
+          vin_count?: number | null
+          vout_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_block_height_fkey"
+            columns: ["block_height"]
+            isOneToOne: false
+            referencedRelation: "blocks"
+            referencedColumns: ["height"]
+          },
+        ]
+      }
+      viewing_keys: {
+        Row: {
+          created_at: string
+          encrypted_key: string
+          id: string
+          key_name: string
+          key_type: string
+          last_used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_key: string
+          id?: string
+          key_name: string
+          key_type: string
+          last_used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_key?: string
+          id?: string
+          key_name?: string
+          key_type?: string
+          last_used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viewing_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
