@@ -1,51 +1,59 @@
+import { useEffect, useState } from "react";
+import { useZcashAPI, Block } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Box, ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface Block {
-  height: number;
-  hash: string;
-  timestamp: number;
-  transactions: number;
-  size: number;
-}
-
-const mockBlocks: Block[] = [
-  {
-    height: 2345678,
-    hash: "0000000000034a8f3e9c0ac...",
-    timestamp: Date.now() - 30000,
-    transactions: 245,
-    size: 1254000,
-  },
-  {
-    height: 2345677,
-    hash: "00000000000a2b5d8f7c1bd...",
-    timestamp: Date.now() - 180000,
-    transactions: 189,
-    size: 985000,
-  },
-  {
-    height: 2345676,
-    hash: "0000000000123c4e9a8f7ed...",
-    timestamp: Date.now() - 330000,
-    transactions: 312,
-    size: 1456000,
-  },
-];
-
-const formatTime = (timestamp: number) => {
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+const formatTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
   if (seconds < 60) return `${seconds}s ago`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   return `${Math.floor(seconds / 3600)}h ago`;
 };
 
-const formatSize = (bytes: number) => {
+const formatSize = (bytes?: number) => {
+  if (!bytes) return "N/A";
   return `${(bytes / 1024).toFixed(0)} KB`;
 };
 
 export const RecentBlocks = () => {
+  const { getLatestBlocks } = useZcashAPI();
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBlocks = async () => {
+      setLoading(true);
+      const data = await getLatestBlocks(3);
+      setBlocks(data);
+      setLoading(false);
+    };
+
+    fetchBlocks();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchBlocks, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Box className="w-6 h-6 text-accent" />
+          Recent Blocks
+        </h2>
+        <div className="grid gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -54,7 +62,7 @@ export const RecentBlocks = () => {
       </h2>
       
       <div className="grid gap-4">
-        {mockBlocks.map((block) => (
+        {blocks.map((block) => (
           <Card 
             key={block.height}
             className="card-glow bg-card/50 backdrop-blur-sm p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10"
@@ -83,7 +91,7 @@ export const RecentBlocks = () => {
                   
                   <div className="flex gap-4 mt-2 text-sm">
                     <span className="text-muted-foreground">
-                      <span className="text-foreground font-semibold">{block.transactions}</span> transactions
+                      <span className="text-foreground font-semibold">{block.tx_count}</span> transactions
                     </span>
                     <span className="text-muted-foreground">
                       <span className="text-foreground font-semibold">{formatSize(block.size)}</span>
