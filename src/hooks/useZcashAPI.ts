@@ -41,8 +41,23 @@ export const useZcashAPI = () => {
     }
   };
 
+  const getBlockchainInfo = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('zcash-api', {
+        body: { action: 'getBlockchainInfo' },
+      });
+
+      if (error) throw error;
+      return data.info || null;
+    } catch (error) {
+      console.error('Error fetching blockchain info:', error);
+      return null;
+    }
+  };
+
   return {
     getLatestBlocks,
     searchBlockchain,
+    getBlockchainInfo,
   };
 };
