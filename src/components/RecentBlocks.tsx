@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useZcashAPI, Block } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Box, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, Box, ArrowRight, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const formatTime = (timestamp: string) => {
@@ -22,32 +24,39 @@ export const RecentBlocks = () => {
   const { getLatestBlocks } = useZcashAPI();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchBlocks = async (showRefreshIndicator = false) => {
+    if (showRefreshIndicator) setRefreshing(true);
+    else setLoading(true);
+
+    const data = await getLatestBlocks(5);
+    setBlocks(data);
+
+    setLoading(false);
+    setRefreshing(false);
+  };
 
   useEffect(() => {
-    const fetchBlocks = async () => {
-      setLoading(true);
-      const data = await getLatestBlocks(3);
-      setBlocks(data);
-      setLoading(false);
-    };
-
     fetchBlocks();
-    
+
     // Refresh every 30 seconds
-    const interval = setInterval(fetchBlocks, 30000);
+    const interval = setInterval(() => fetchBlocks(true), 30000);
     return () => clearInterval(interval);
   }, []);
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Box className="w-6 h-6 text-accent" />
-          Recent Blocks
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Box className="w-6 h-6 text-accent" />
+            Recent Blocks
+          </h2>
+        </div>
         <div className="grid gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 w-full" />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-28 w-full" />
           ))}
         </div>
       </div>
@@ -56,55 +65,94 @@ export const RecentBlocks = () => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold flex items-center gap-2">
-        <Box className="w-6 h-6 text-accent" />
-        Recent Blocks
-      </h2>
-      
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Box className="w-6 h-6 text-accent" />
+          Recent Blocks
+        </h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fetchBlocks(true)}
+          disabled={refreshing}
+          className="border-accent/30"
+        >
+          <RefreshCw
+            className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
+      </div>
+
       <div className="grid gap-4">
         {blocks.map((block) => (
-          <Card 
-            key={block.height}
-            className="card-glow bg-card/50 backdrop-blur-sm p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10"
-          >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex flex-col items-center justify-center w-20 h-20 rounded-lg bg-accent/10 border border-accent/20">
-                  <Box className="w-6 h-6 text-accent mb-1" />
-                  <span className="text-xs font-mono text-accent">{block.height}</span>
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="outline" className="text-xs font-mono border-accent/30">
-                      Block #{block.height}
-                    </Badge>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      {formatTime(block.timestamp)}
+          <Link key={block.height} to={`/block/${block.height}`}>
+            <Card className="card-glow bg-card/50 backdrop-blur-sm p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10 group">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex flex-col items-center justify-center w-20 h-20 rounded-lg bg-accent/10 border border-accent/20 group-hover:bg-accent/20 transition-colors">
+                    <Box className="w-6 h-6 text-accent mb-1" />
+                    <span className="text-xs font-mono text-accent">
+                      {block.height.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <Badge
+                        variant="outline"
+                        className="text-xs font-mono border-accent/30"
+                      >
+                        Block #{block.height.toLocaleString()}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        {formatTime(block.timestamp)}
+                      </div>
+                    </div>
+
+                    <p className="font-mono text-sm text-muted-foreground truncate">
+                      {block.hash}
+                    </p>
+
+                    <div className="flex flex-wrap gap-4 mt-2 text-sm">
+                      <span className="text-muted-foreground">
+                        <span className="text-foreground font-semibold">
+                          {block.tx_count}
+                        </span>{" "}
+                        txns
+                      </span>
+                      {block.size && (
+                        <span className="text-muted-foreground">
+                          <span className="text-foreground font-semibold">
+                            {formatSize(block.size)}
+                          </span>
+                        </span>
+                      )}
+                      {block.difficulty && (
+                        <span className="text-muted-foreground hidden sm:inline">
+                          Diff:{" "}
+                          <span className="text-foreground font-semibold">
+                            {(block.difficulty / 1e6).toFixed(2)}M
+                          </span>
+                        </span>
+                      )}
                     </div>
                   </div>
-                  
-                  <p className="font-mono text-sm text-muted-foreground truncate">
-                    {block.hash}
-                  </p>
-                  
-                  <div className="flex gap-4 mt-2 text-sm">
-                    <span className="text-muted-foreground">
-                      <span className="text-foreground font-semibold">{block.tx_count}</span> transactions
-                    </span>
-                    <span className="text-muted-foreground">
-                      <span className="text-foreground font-semibold">{formatSize(block.size)}</span>
-                    </span>
-                  </div>
                 </div>
+
+                <ArrowRight className="w-5 h-5 text-accent hidden md:block opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              
-              <ArrowRight className="w-5 h-5 text-accent hidden md:block" />
-            </div>
-          </Card>
+            </Card>
+          </Link>
         ))}
       </div>
+
+      {blocks.length === 0 && (
+        <Card className="p-8 text-center text-muted-foreground">
+          <p>No blocks found. The blockchain might still be syncing.</p>
+        </Card>
+      )}
     </div>
   );
 };

@@ -37,11 +37,17 @@ export const useAuth = () => {
     return localStorage.getItem("zcash_viewing_key");
   };
 
+  const getBirthdayHeight = () => {
+    const height = localStorage.getItem("zcash_birthday_height");
+    return height ? parseInt(height) : null;
+  };
+
   return {
     isConnected: wallet.isConnected,
     viewingKey: wallet.viewingKey,
     loading,
     disconnect,
     getViewingKey,
+    getBirthdayHeight,
   };
 };

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -46,7 +46,11 @@
     --zcash-gold: 45 100% 50%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(28 100% 55%), hsl(45 100% 50%));
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(28 100% 55%),
+      hsl(45 100% 50%)
+    );
     --gradient-dark: linear-gradient(180deg, hsl(220 15% 8%), hsl(220 15% 11%));
 
     /* Shadows */
@@ -62,6 +66,39 @@
     --sidebar-border: 220 15% 20%;
     --sidebar-ring: 28 100% 55%;
   }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 220 15% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 8%;
+
+    --primary: 28 100% 55%;
+    --primary-foreground: 220 15% 8%;
+
+    --secondary: 220 15% 96%;
+    --secondary-foreground: 220 15% 8%;
+
+    --muted: 220 15% 96%;
+    --muted-foreground: 220 15% 46%;
+
+    --accent: 28 100% 55%;
+    --accent-foreground: 220 15% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 28 100% 55%;
+
+    --gradient-dark: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 15% 96%));
+    --shadow-card: 0 4px 20px hsl(220 15% 80% / 0.2);
+  }
 }
 
 @layer base {
@@ -71,11 +108,11 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Outfit', sans-serif;
+    font-family: "Outfit", sans-serif;
   }
 
   .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: "JetBrains Mono", monospace;
   }
 
   /* Custom scrollbar */

@@ -5,21 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, ArrowLeft, Upload, QrCode, Key, Eye, EyeOff } from "lucide-react";
+import {
+  Shield,
+  ArrowLeft,
+  Upload,
+  QrCode,
+  Key,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { Scanner } from "@yudiel/react-qr-scanner";
 
 // Zcash unified viewing key validation (starts with 'uview' for mainnet)
-const viewingKeySchema = z.string()
+const viewingKeySchema = z
+  .string()
   .min(100, "Viewing key is too short")
   .max(1000, "Viewing key is too long")
   .refine((key) => key.startsWith("uview") || key.startsWith("zview"), {
-    message: "Invalid viewing key format. Must start with 'uview' or 'zview'"
+    message: "Invalid viewing key format. Must start with 'uview' or 'zview'",
   });
 
 const Auth = () => {
   const [viewingKey, setViewingKey] = useState("");
+  const [birthdayHeight, setBirthdayHeight] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
@@ -39,11 +49,16 @@ const Auth = () => {
   const validateAndConnect = (key: string) => {
     try {
       viewingKeySchema.parse(key.trim());
-      
+
       // Store viewing key client-side only
       localStorage.setItem("zcash_viewing_key", key.trim());
       localStorage.setItem("zcash_connected", "true");
-      
+      if (birthdayHeight) {
+        localStorage.setItem("zcash_birthday_height", birthdayHeight);
+      } else {
+        localStorage.removeItem("zcash_birthday_height");
+      }
+
       toast({
         title: "Wallet Connected",
         description: "Your viewing key has been securely stored locally",
@@ -74,11 +89,12 @@ const Auth = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      
+
       try {
         // Try parsing as JSON first
         const json = JSON.parse(content);
-        const key = json.viewing_key || json.viewingKey || json.key || json.ufvk;
+        const key =
+          json.viewing_key || json.viewingKey || json.key || json.ufvk;
         if (key) {
           validateAndConnect(key);
         } else {
@@ -94,7 +110,7 @@ const Auth = () => {
       }
     };
     reader.readAsText(file);
-    
+
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -123,7 +139,8 @@ const Auth = () => {
             <Shield className="w-16 h-16 text-accent mb-4" />
             <h1 className="text-3xl font-bold mb-2">Connect Wallet</h1>
             <p className="text-muted-foreground text-center">
-              Provide your unified viewing key to access your shielded transactions
+              Provide your unified viewing key to access your shielded
+              transactions
             </p>
           </div>
 
@@ -162,11 +179,33 @@ const Auth = () => {
                       onClick={() => setShowKey(!showKey)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showKey ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Your viewing key never leaves your device
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="birthdayHeight">
+                    Birthday Height (Optional)
+                  </Label>
+                  <Input
+                    id="birthdayHeight"
+                    type="number"
+                    placeholder="e.g. 2500000"
+                    value={birthdayHeight}
+                    onChange={(e) => setBirthdayHeight(e.target.value)}
+                    className="bg-secondary border-accent/20 focus:border-accent font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Scanning will start from this block height. Defaults to
+                    500,000 blocks ago.
                   </p>
                 </div>
 
