@@ -6,19 +6,18 @@ import { NetworkStats } from "@/components/NetworkStats";
 import { RecentBlocks } from "@/components/RecentBlocks";
 import { ViewingKeyDialog } from "@/components/ViewingKeyDialog";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { LogOut, Wallet, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
-  const { user, loading, signOut } = useAuth();
+  const { isConnected, viewingKey, loading, disconnect } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !user) {
-      // Redirect to auth if not logged in
+    if (!loading && !isConnected) {
       navigate("/auth");
     }
-  }, [user, loading, navigate]);
+  }, [isConnected, loading, navigate]);
 
   if (loading) {
     return (
@@ -31,23 +30,43 @@ const Index = () => {
     );
   }
 
-  if (!user) {
-    return null; // Will redirect via useEffect
+  if (!isConnected) {
+    return null;
   }
+
+  const truncateKey = (key: string | null) => {
+    if (!key) return "Connected";
+    return `${key.slice(0, 8)}...${key.slice(-4)}`;
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
+    navigate("/auth");
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* User Menu */}
+      {/* Wallet Status */}
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
-        <div className="bg-card/80 backdrop-blur-sm px-4 py-2 rounded-lg border border-accent/20 flex items-center gap-2">
-          <User className="w-4 h-4 text-accent" />
-          <span className="text-sm font-mono text-muted-foreground">{user.email}</span>
+        <div className="bg-card/80 backdrop-blur-sm px-4 py-2 rounded-lg border border-accent/20 flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-terminal-green" />
+            <span className="text-xs text-terminal-green font-medium">Connected</span>
+          </div>
+          <div className="w-px h-4 bg-border" />
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-accent" />
+            <span className="text-sm font-mono text-muted-foreground">
+              {truncateKey(viewingKey)}
+            </span>
+          </div>
         </div>
         <Button
           variant="outline"
           size="sm"
-          onClick={signOut}
+          onClick={handleDisconnect}
           className="border-accent/50 hover:bg-accent/10"
+          title="Disconnect wallet"
         >
           <LogOut className="w-4 h-4" />
         </Button>

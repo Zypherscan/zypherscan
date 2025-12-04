@@ -1,35 +1,47 @@
 import { useState, useEffect } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+
+interface WalletState {
+  isConnected: boolean;
+  viewingKey: string | null;
+}
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [wallet, setWallet] = useState<WalletState>({
+    isConnected: false,
+    viewingKey: null,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+    // Check localStorage for existing connection
+    const connected = localStorage.getItem("zcash_connected") === "true";
+    const viewingKey = localStorage.getItem("zcash_viewing_key");
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    setWallet({
+      isConnected: connected && !!viewingKey,
+      viewingKey: connected ? viewingKey : null,
     });
-
-    return () => subscription.unsubscribe();
+    setLoading(false);
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const disconnect = () => {
+    localStorage.removeItem("zcash_connected");
+    localStorage.removeItem("zcash_viewing_key");
+    setWallet({
+      isConnected: false,
+      viewingKey: null,
+    });
   };
 
-  return { user, session, loading, signOut };
+  const getViewingKey = () => {
+    return localStorage.getItem("zcash_viewing_key");
+  };
+
+  return {
+    isConnected: wallet.isConnected,
+    viewingKey: wallet.viewingKey,
+    loading,
+    disconnect,
+    getViewingKey,
+  };
 };
