@@ -6,19 +6,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Zcash blockchain API - using public Zcash block explorer API
-const ZCASH_API_BASE = "https://api.zcha.in/v2/mainnet";
+// Zebra node RPC endpoint
+const ZEBRA_RPC_URL = "https://zebra.up.railway.app";
 
-interface BlockResponse {
-  height: number;
-  hash: string;
-  version: number;
-  merkleRoot: string;
-  timestamp: number;
-  nonce: string;
-  difficulty: number;
-  size: number;
-  transactions: string[];
+// Helper function to make JSON-RPC calls to Zebra
+async function zebraRPC(method: string, params: any[] = []) {
+  console.log(`Zebra RPC call: ${method}`, params);
+  const response = await fetch(ZEBRA_RPC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method,
+      params,
+    }),
+  });
+  
+  const data = await response.json();
+  console.log(`Zebra RPC response for ${method}:`, JSON.stringify(data).slice(0, 500));
+  
+  if (data.error) {
+    throw new Error(data.error.message || 'RPC Error');
+  }
+  return data.result;
 }
 
 serve(async (req) => {
@@ -28,11 +39,9 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname.replace('/zcash-api/', '');
-    const action = url.searchParams.get('action');
+    const { action, limit, id, txid, query } = await req.json();
     
-    console.log('Zcash API Request:', { path, action });
+    console.log('Zcash API Request:', { action, limit, id, txid, query });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -41,14 +50,14 @@ serve(async (req) => {
 
     switch (action) {
       case 'getLatestBlocks': {
-        const limit = parseInt(url.searchParams.get('limit') || '10');
+        const blockLimit = limit || 10;
         
         // First try to get from cache
         const { data: cachedBlocks, error: cacheError } = await supabase
           .from('blocks')
           .select('*')
           .order('height', { ascending: false })
-          .limit(limit);
+          .limit(blockLimit);
 
         if (cachedBlocks && cachedBlocks.length > 0) {
           console.log('Returning cached blocks:', cachedBlocks.length);
@@ -58,29 +67,39 @@ serve(async (req) => {
           );
         }
 
-        // If no cache, fetch from API and cache it
-        const response = await fetch(`${ZCASH_API_BASE}/blocks?limit=${limit}`);
-        const blocks = await response.json();
+        // Get blockchain info to find latest height
+        const blockchainInfo = await zebraRPC('getblockchaininfo');
+        const latestHeight = blockchainInfo.blocks;
         
-        console.log('Fetched blocks from API:', blocks.length);
-        
-        // Cache blocks in database
-        if (blocks && Array.isArray(blocks)) {
-          const blocksToInsert = blocks.map((block: any) => ({
+        console.log('Latest block height:', latestHeight);
+
+        // Fetch the latest blocks
+        const blocks = [];
+        for (let i = 0; i < blockLimit && latestHeight - i >= 0; i++) {
+          const height = latestHeight - i;
+          const blockHash = await zebraRPC('getblockhash', [height]);
+          const block = await zebraRPC('getblock', [blockHash, 1]); // verbosity 1 for JSON
+          
+          blocks.push({
             height: block.height,
             hash: block.hash,
             version: block.version,
             merkle_root: block.merkleroot,
-            timestamp: new Date(block.timestamp * 1000).toISOString(),
+            timestamp: new Date(block.time * 1000).toISOString(),
             nonce: block.nonce,
             difficulty: block.difficulty,
             size: block.size,
             tx_count: block.tx ? block.tx.length : 0,
-          }));
-
+          });
+        }
+        
+        console.log('Fetched blocks from Zebra:', blocks.length);
+        
+        // Cache blocks in database
+        if (blocks.length > 0) {
           const { error: insertError } = await supabase
             .from('blocks')
-            .upsert(blocksToInsert, { onConflict: 'height' });
+            .upsert(blocks, { onConflict: 'height' });
 
           if (insertError) {
             console.error('Error caching blocks:', insertError);
@@ -96,7 +115,7 @@ serve(async (req) => {
       }
 
       case 'getBlock': {
-        const heightOrHash = url.searchParams.get('id');
+        const heightOrHash = id;
         if (!heightOrHash) {
           return new Response(
             JSON.stringify({ success: false, error: 'Block ID required' }),
@@ -109,7 +128,7 @@ serve(async (req) => {
           .from('blocks')
           .select('*')
           .or(`height.eq.${heightOrHash},hash.eq.${heightOrHash}`)
-          .single();
+          .maybeSingle();
 
         if (cachedBlock) {
           console.log('Returning cached block:', cachedBlock.height);
@@ -119,35 +138,37 @@ serve(async (req) => {
           );
         }
 
-        // Fetch from API
-        const response = await fetch(`${ZCASH_API_BASE}/blocks/${heightOrHash}`);
-        const block = await response.json();
+        // Fetch from Zebra
+        let blockHash = heightOrHash;
+        if (/^\d+$/.test(heightOrHash)) {
+          // It's a height, get the hash first
+          blockHash = await zebraRPC('getblockhash', [parseInt(heightOrHash)]);
+        }
+        
+        const block = await zebraRPC('getblock', [blockHash, 1]);
+
+        const blockToCache = {
+          height: block.height,
+          hash: block.hash,
+          version: block.version,
+          merkle_root: block.merkleroot,
+          timestamp: new Date(block.time * 1000).toISOString(),
+          nonce: block.nonce,
+          difficulty: block.difficulty,
+          size: block.size,
+          tx_count: block.tx ? block.tx.length : 0,
+        };
 
         // Cache it
-        if (block) {
-          const blockToInsert = {
-            height: block.height,
-            hash: block.hash,
-            version: block.version,
-            merkle_root: block.merkleroot,
-            timestamp: new Date(block.timestamp * 1000).toISOString(),
-            nonce: block.nonce,
-            difficulty: block.difficulty,
-            size: block.size,
-            tx_count: block.tx ? block.tx.length : 0,
-          };
-
-          await supabase.from('blocks').upsert(blockToInsert, { onConflict: 'height' });
-        }
+        await supabase.from('blocks').upsert(blockToCache, { onConflict: 'height' });
 
         return new Response(
-          JSON.stringify({ success: true, block }),
+          JSON.stringify({ success: true, block: blockToCache }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
       case 'getTransaction': {
-        const txid = url.searchParams.get('txid');
         if (!txid) {
           return new Response(
             JSON.stringify({ success: false, error: 'Transaction ID required' }),
@@ -160,7 +181,7 @@ serve(async (req) => {
           .from('transactions')
           .select('*')
           .eq('txid', txid)
-          .single();
+          .maybeSingle();
 
         if (cachedTx) {
           console.log('Returning cached transaction:', txid);
@@ -170,36 +191,32 @@ serve(async (req) => {
           );
         }
 
-        // Fetch from API
-        const response = await fetch(`${ZCASH_API_BASE}/transactions/${txid}`);
-        const transaction = await response.json();
+        // Fetch from Zebra
+        const transaction = await zebraRPC('getrawtransaction', [txid, 1]); // verbosity 1 for JSON
+
+        const txToCache = {
+          txid: transaction.txid,
+          block_height: transaction.height,
+          version: transaction.version,
+          locktime: transaction.locktime,
+          vin_count: transaction.vin ? transaction.vin.length : 0,
+          vout_count: transaction.vout ? transaction.vout.length : 0,
+          shielded_inputs: transaction.vShieldedSpend ? transaction.vShieldedSpend.length : 0,
+          shielded_outputs: transaction.vShieldedOutput ? transaction.vShieldedOutput.length : 0,
+          value_balance: transaction.valueBalance || 0,
+          timestamp: transaction.time ? new Date(transaction.time * 1000).toISOString() : null,
+        };
 
         // Cache it
-        if (transaction) {
-          const txToInsert = {
-            txid: transaction.hash,
-            block_height: transaction.blockheight,
-            version: transaction.version,
-            locktime: transaction.locktime,
-            vin_count: transaction.vin ? transaction.vin.length : 0,
-            vout_count: transaction.vout ? transaction.vout.length : 0,
-            shielded_inputs: transaction.vShieldedSpend ? transaction.vShieldedSpend.length : 0,
-            shielded_outputs: transaction.vShieldedOutput ? transaction.vShieldedOutput.length : 0,
-            value_balance: transaction.valueBalance || 0,
-            timestamp: transaction.timestamp ? new Date(transaction.timestamp * 1000).toISOString() : null,
-          };
-
-          await supabase.from('transactions').upsert(txToInsert, { onConflict: 'txid' });
-        }
+        await supabase.from('transactions').upsert(txToCache, { onConflict: 'txid' });
 
         return new Response(
-          JSON.stringify({ success: true, transaction }),
+          JSON.stringify({ success: true, transaction: { ...transaction, ...txToCache } }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
       case 'search': {
-        const query = url.searchParams.get('query');
         if (!query) {
           return new Response(
             JSON.stringify({ success: false, error: 'Search query required' }),
@@ -211,39 +228,53 @@ serve(async (req) => {
 
         // Check if it's a block height (number)
         if (/^\d+$/.test(query)) {
-          const response = await fetch(`${ZCASH_API_BASE}/blocks/${query}`);
-          if (response.ok) {
-            const block = await response.json();
+          try {
+            const blockHash = await zebraRPC('getblockhash', [parseInt(query)]);
+            const block = await zebraRPC('getblock', [blockHash, 1]);
             return new Response(
               JSON.stringify({ success: true, type: 'block', result: block }),
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
+          } catch (e) {
+            console.log('Not a valid block height');
           }
         }
 
-        // Try as transaction hash
-        const txResponse = await fetch(`${ZCASH_API_BASE}/transactions/${query}`);
-        if (txResponse.ok) {
-          const transaction = await txResponse.json();
-          return new Response(
-            JSON.stringify({ success: true, type: 'transaction', result: transaction }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
+        // Try as block hash (64 char hex)
+        if (/^[0-9a-fA-F]{64}$/.test(query)) {
+          try {
+            const block = await zebraRPC('getblock', [query, 1]);
+            return new Response(
+              JSON.stringify({ success: true, type: 'block', result: block }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } catch (e) {
+            console.log('Not a valid block hash, trying as transaction');
+          }
 
-        // Try as block hash
-        const blockResponse = await fetch(`${ZCASH_API_BASE}/blocks/${query}`);
-        if (blockResponse.ok) {
-          const block = await blockResponse.json();
-          return new Response(
-            JSON.stringify({ success: true, type: 'block', result: block }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          // Try as transaction hash
+          try {
+            const transaction = await zebraRPC('getrawtransaction', [query, 1]);
+            return new Response(
+              JSON.stringify({ success: true, type: 'transaction', result: transaction }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          } catch (e) {
+            console.log('Not a valid transaction hash');
+          }
         }
 
         return new Response(
           JSON.stringify({ success: false, error: 'No results found' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'getBlockchainInfo': {
+        const info = await zebraRPC('getblockchaininfo');
+        return new Response(
+          JSON.stringify({ success: true, info }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
