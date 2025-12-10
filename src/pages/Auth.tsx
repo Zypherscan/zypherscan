@@ -13,10 +13,12 @@ import {
   Key,
   Eye,
   EyeOff,
+  Sprout,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { Scanner } from "@yudiel/react-qr-scanner";
+import { SeedPhraseConnect } from "@/components/SeedPhraseConnect";
 
 // Zcash unified viewing key validation (starts with 'uview' for mainnet)
 const viewingKeySchema = z
@@ -145,7 +147,7 @@ const Auth = () => {
           </div>
 
           <Tabs defaultValue="manual" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="manual" className="flex items-center gap-2">
                 <Key className="w-4 h-4" />
                 <span className="hidden sm:inline">Manual</span>
@@ -157,6 +159,10 @@ const Auth = () => {
               <TabsTrigger value="qr" className="flex items-center gap-2">
                 <QrCode className="w-4 h-4" />
                 <span className="hidden sm:inline">QR</span>
+              </TabsTrigger>
+              <TabsTrigger value="seed" className="flex items-center gap-2">
+                <Sprout className="w-4 h-4" />
+                <span className="hidden sm:inline">Seed</span>
               </TabsTrigger>
             </TabsList>
 
@@ -293,6 +299,12 @@ const Auth = () => {
                   </div>
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="seed">
+              <SeedPhraseConnect
+                onConnect={(ufvk) => validateAndConnect(ufvk)}
+              />
             </TabsContent>
           </Tabs>
         </Card>

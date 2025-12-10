@@ -835,6 +835,15 @@ serve(async (req) => {
               getSafe("getpeerinfo"),
             ]);
 
+          // Log peer info structure for debugging
+          console.log(
+            "Peer info from Zebra:",
+            JSON.stringify(peerInfo?.slice(0, 2), null, 2)
+          );
+          if (peerInfo && peerInfo.length > 0) {
+            console.log("First peer keys:", Object.keys(peerInfo[0]));
+          }
+
           // If blockchainInfo is null, try Cipherscan
           let finalBlockchainInfo = blockchainInfo;
           if (!finalBlockchainInfo) {

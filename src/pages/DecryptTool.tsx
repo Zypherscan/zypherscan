@@ -39,6 +39,7 @@ const DecryptTool = () => {
 
     try {
       console.log("Fetching raw transaction hex for:", txid);
+      console.log("Using viewing key:", viewingKey.substring(0, 20) + "...");
 
       // Fetch raw transaction hex via Supabase zcash-api
       // Note: Cipherscan doesn't provide raw hex, only metadata
@@ -69,6 +70,58 @@ const DecryptTool = () => {
       const txHex = response.data.hex;
       console.log("✓ Got transaction hex, length:", txHex.length);
 
+      // Analyze transaction structure
+      try {
+        const txAnalysis = await supabase.functions.invoke("zcash-api", {
+          body: { action: "getTransaction", txid },
+        });
+
+        if (txAnalysis.data?.transaction) {
+          const tx = txAnalysis.data.transaction;
+          console.log("Transaction analysis:", {
+            version: tx.version,
+            hasSapling:
+              (tx.vShieldedSpend?.length || 0) > 0 ||
+              (tx.vShieldedOutput?.length || 0) > 0,
+            hasOrchard: tx.orchard?.actions?.length > 0,
+            saplingOutputs: tx.vShieldedOutput?.length || 0,
+            orchardActions: tx.orchard?.actions?.length || 0,
+          });
+
+          // Provide helpful feedback
+          if (tx.version < 5) {
+            setError(
+              "⚠️ This is a legacy transaction (version " +
+                tx.version +
+                ").\n\n" +
+                "Only Orchard transactions (version 5) are supported for decryption.\n" +
+                "This transaction uses Sapling or older shielded pools."
+            );
+            return;
+          }
+
+          if (
+            !tx.orchard ||
+            !tx.orchard.actions ||
+            tx.orchard.actions.length === 0
+          ) {
+            setError(
+              "⚠️ This transaction has no Orchard actions.\n\n" +
+                "Current WASM only supports Orchard memo decryption.\n" +
+                "Sapling outputs: " +
+                (tx.vShieldedOutput?.length || 0) +
+                "\n" +
+                "Orchard actions: 0\n\n" +
+                "Note: Sapling decryption support is coming soon!"
+            );
+            return;
+          }
+        }
+      } catch (analysisError) {
+        console.warn("Could not analyze transaction:", analysisError);
+        // Continue with decryption attempt anyway
+      }
+
       // Decrypt using WASM
       console.log("Attempting to decrypt transaction...");
 
@@ -91,7 +144,8 @@ const DecryptTool = () => {
               "This transaction may:\n" +
               "• Not be sent to your address\n" +
               "• Not be an Orchard transaction\n" +
-              "• Be encrypted for a different viewing key"
+              "• Be encrypted for a different viewing key\n\n" +
+              "💡 Tip: Make sure you're using the viewing key for the address that RECEIVED this transaction."
           );
         }
       } catch (decryptError) {
@@ -110,7 +164,8 @@ const DecryptTool = () => {
               "Possible reasons:\n" +
               "• The transaction was sent to a different address\n" +
               "• You're using the wrong viewing key\n" +
-              "• The transaction only has transparent or Sapling outputs (not Orchard)"
+              "• The transaction only has transparent or Sapling outputs (not Orchard)\n\n" +
+              "💡 Tip: Verify you're using the viewing key for the RECEIVING address, not the sending address."
           );
         } else {
           setError(`Decryption error: ${errorMsg}`);

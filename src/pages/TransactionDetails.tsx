@@ -28,8 +28,10 @@ import { toast } from "sonner";
 
 interface TransactionDetails {
   txid: string;
+  hex?: string; // Raw transaction hex for decryption
   blockhash?: string;
   blockheight?: number;
+  height?: number; // API returns "height" instead of "blockheight"
   confirmations?: number;
   time?: number;
   version: number;
@@ -219,6 +221,9 @@ const TransactionDetails = () => {
     );
   }
 
+  // Get block height from either 'height' or 'blockheight' field
+  const blockHeight = transaction?.height || transaction?.blockheight;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Main Content */}
@@ -278,11 +283,11 @@ const TransactionDetails = () => {
                 </div>
               </div>
 
-              {transaction.blockheight && (
-                <Link to={`/block/${transaction.blockheight}`}>
+              {blockHeight && (
+                <Link to={`/block/${blockHeight}`}>
                   <Button variant="outline" className="border-accent/30">
                     <Box className="w-4 h-4 mr-2" />
-                    Block #{transaction.blockheight.toLocaleString()}
+                    Block #{blockHeight.toLocaleString()}
                   </Button>
                 </Link>
               )}

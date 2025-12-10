@@ -13,6 +13,8 @@ import DecryptTool from "./pages/DecryptTool";
 import Mempool from "./pages/Mempool";
 import NetworkStatus from "./pages/NetworkStatus";
 import RecentBlocks from "./pages/RecentBlocks";
+import WasmTest from "./pages/WasmTest";
+import WasmDiagnostics from "./pages/WasmDiagnostics";
 import NotFound from "./pages/NotFound";
 
 import { Layout } from "./components/Layout";
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/mempool" element={<Mempool />} />
             <Route path="/network" element={<NetworkStatus />} />
             <Route path="/blocks" element={<RecentBlocks />} />
+            <Route path="/wasm-test" element={<WasmTest />} />
+            <Route path="/wasm-diagnostics" element={<WasmDiagnostics />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

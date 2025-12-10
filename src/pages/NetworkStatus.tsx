@@ -145,9 +145,7 @@ const NetworkStatus = () => {
             <thead className="text-muted-foreground border-b border-border">
               <tr>
                 <th className="pb-3 pl-4">Address</th>
-                <th className="pb-3">Version</th>
-                <th className="pb-3">Subver</th>
-                <th className="pb-3">Ping</th>
+                <th className="pb-3">Connection Type</th>
               </tr>
             </thead>
             <tbody className="font-mono">
@@ -156,17 +154,21 @@ const NetworkStatus = () => {
                   key={i}
                   className="border-b border-border/50 last:border-0 hover:bg-accent/5"
                 >
-                  <td className="py-3 pl-4">{peer.addr}</td>
-                  <td className="py-3">{peer.version}</td>
-                  <td className="py-3">{peer.subver}</td>
+                  <td className="py-3 pl-4">{peer.addr || "N/A"}</td>
                   <td className="py-3">
-                    {(peer.pingtime * 1000).toFixed(0)} ms
+                    <Badge variant={peer.inbound ? "secondary" : "default"}>
+                      {peer.inbound ? "Inbound" : "Outbound"}
+                    </Badge>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <p className="text-xs text-muted-foreground mt-4">
+          Note: Zebra only provides peer addresses and connection direction.
+          Version and ping data are not available.
+        </p>
       </Card>
     </div>
   );
