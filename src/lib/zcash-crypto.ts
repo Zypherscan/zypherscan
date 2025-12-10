@@ -39,6 +39,8 @@ export interface DecryptedTransaction {
   pool: "sapling" | "orchard" | "transparent";
   address?: string;
   height: number;
+  confirmations?: number;
+  fee?: number;
 }
 
 export interface WalletBalance {
@@ -166,12 +168,8 @@ export async function decryptTransactions(
   }
 
   if (allOutputs.length === 0) {
-    console.log("No Orchard outputs found to decrypt");
     return [];
   }
-
-  console.log(`Decrypting ${allOutputs.length} outputs...`);
-  console.log("Sample output:", allOutputs[0]);
 
   try {
     // Sanitize outputs for WASM (remove extra fields like timestamp)
@@ -207,8 +205,6 @@ export async function decryptTransactions(
       viewingKey
     );
     const matches = JSON.parse(matchesJson);
-
-    console.log(`Found ${matches.length} matching outputs`);
 
     // For each match, decrypt the full output to get amount and memo
     for (const match of matches) {

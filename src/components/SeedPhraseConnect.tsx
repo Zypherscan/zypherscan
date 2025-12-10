@@ -54,16 +54,9 @@ export function SeedPhraseConnect({
     const words = trimmed.split(/\s+/).filter((w) => w.length > 0);
     const wordCount = words.length;
 
-    console.log("Seed phrase validation:", {
-      wordCount,
-      firstWord: words[0],
-      lastWord: words[words.length - 1],
-    });
-
     if (wordCount === 12 || wordCount === 24) {
       try {
         const isValid = await validateSeedPhrase(trimmed);
-        console.log("Validation result:", isValid);
         setValidationStatus(isValid ? "valid" : "invalid");
         if (!isValid) {
           setError(
@@ -99,7 +92,6 @@ export function SeedPhraseConnect({
 
       // Get word count for logging
       const wordCount = await getSeedWordCount(seedPhrase.trim());
-      console.log(`Deriving UFVK from ${wordCount}-word seed phrase...`);
 
       // Derive UFVK
       const ufvk = await deriveUFVKFromSeed(
@@ -107,8 +99,6 @@ export function SeedPhraseConnect({
         accountIndex,
         network
       );
-
-      console.log("✅ UFVK derived successfully");
 
       // Clear seed phrase immediately
       setSeedPhrase("");
@@ -156,9 +146,9 @@ export function SeedPhraseConnect({
                   </ul>
                 </div>
 
-                <div className="bg-blue-500/10 p-4 rounded-lg space-y-2">
+                <div className="bg-terminal-green/10 p-4 rounded-lg space-y-2">
                   <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-blue-500" />
+                    <Shield className="w-5 h-5 text-terminal-green" />
                     <p className="font-semibold">What we do to protect you:</p>
                   </div>
                   <ul className="list-disc list-inside space-y-1 ml-2 text-xs">

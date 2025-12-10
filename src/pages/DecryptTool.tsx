@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 import { decryptMemo } from "@/lib/wasm-loader";
@@ -7,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Loader2, Lock, Unlock, ArrowRight } from "lucide-react";
+import { Loader2, Lock, Unlock, ArrowRight, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const DecryptTool = () => {
+  const navigate = useNavigate();
   const { viewingKey, isConnected } = useAuth();
   const { searchBlockchain } = useZcashAPI();
   const { toast } = useToast();
@@ -38,19 +40,11 @@ const DecryptTool = () => {
     setResult(null);
 
     try {
-      console.log("Fetching raw transaction hex for:", txid);
-      console.log("Using viewing key:", viewingKey.substring(0, 20) + "...");
-
-      // Fetch raw transaction hex via Supabase zcash-api
-      // Note: Cipherscan doesn't provide raw hex, only metadata
       const response = await supabase.functions.invoke("zcash-api", {
         body: { action: "getRawTransaction", txid },
       });
 
-      console.log("API response:", response);
-
       if (response.error) {
-        console.error("API error:", response.error);
         throw new Error(
           "Failed to fetch transaction. This requires a working Zcash RPC node.\n\n" +
             "Please ensure:\n" +
@@ -68,7 +62,6 @@ const DecryptTool = () => {
       }
 
       const txHex = response.data.hex;
-      console.log("✓ Got transaction hex, length:", txHex.length);
 
       // Analyze transaction structure
       try {
@@ -78,18 +71,24 @@ const DecryptTool = () => {
 
         if (txAnalysis.data?.transaction) {
           const tx = txAnalysis.data.transaction;
-          console.log("Transaction analysis:", {
-            version: tx.version,
-            hasSapling:
-              (tx.vShieldedSpend?.length || 0) > 0 ||
-              (tx.vShieldedOutput?.length || 0) > 0,
-            hasOrchard: tx.orchard?.actions?.length > 0,
-            saplingOutputs: tx.vShieldedOutput?.length || 0,
-            orchardActions: tx.orchard?.actions?.length || 0,
-          });
 
           // Provide helpful feedback
           if (tx.version < 5) {
+            setError(
+              "⚠️ This is a legacy transaction (version " +
+                tx.version +
+                ").\n\n" +
+                "Only Orchard transactions (version 5) are supported for decryption.\n" +
+                "This transaction uses Sapling or older shielded pools."
+            );
+            return;
+          }
+
+          if (
+            !tx.orchard ||
+            !tx.orchard.actions ||
+            tx.orchard.actions.length === 0
+          ) {
             setError(
               "⚠️ This is a legacy transaction (version " +
                 tx.version +
@@ -122,12 +121,8 @@ const DecryptTool = () => {
         // Continue with decryption attempt anyway
       }
 
-      // Decrypt using WASM
-      console.log("Attempting to decrypt transaction...");
-
       try {
         const decrypted = await decryptMemo(txHex, viewingKey);
-        console.log("Decryption result:", decrypted);
 
         if (decrypted && (decrypted.memo || decrypted.amount > 0)) {
           setResult({
@@ -149,7 +144,6 @@ const DecryptTool = () => {
           );
         }
       } catch (decryptError) {
-        console.log("WASM decryption error:", decryptError);
         const errorMsg =
           decryptError instanceof Error
             ? decryptError.message
@@ -183,6 +177,14 @@ const DecryptTool = () => {
 
   return (
     <div className="container px-6 py-8 max-w-2xl mx-auto">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-muted-foreground hover:text-accent transition-colors mb-4"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span>Back</span>
+      </button>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
           <Unlock className="w-8 h-8 text-accent" />

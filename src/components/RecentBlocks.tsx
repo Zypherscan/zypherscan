@@ -90,51 +90,40 @@ export const RecentBlocks = () => {
             <Card className="card-glow bg-card/50 backdrop-blur-sm p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10 group">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="flex flex-col items-center justify-center w-20 h-20 rounded-lg bg-accent/10 border border-accent/20 group-hover:bg-accent/20 transition-colors">
-                    <Box className="w-6 h-6 text-accent mb-1" />
-                    <span className="text-xs font-mono text-accent">
-                      {block.height.toLocaleString()}
-                    </span>
+                  <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 group-hover:bg-accent/20 transition-colors shrink-0">
+                    <Box className="w-6 h-6 text-accent" />
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-mono border-accent/30"
-                      >
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="font-mono text-sm font-semibold text-foreground">
                         Block #{block.height.toLocaleString()}
-                      </Badge>
+                      </span>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="w-3 h-3" />
                         {formatTime(block.timestamp)}
                       </div>
                     </div>
 
-                    <p className="font-mono text-sm text-muted-foreground truncate">
+                    <p className="font-mono text-xs text-muted-foreground truncate opacity-70 mb-2">
                       {block.hash}
                     </p>
 
-                    <div className="flex flex-wrap gap-4 mt-2 text-sm">
-                      <span className="text-muted-foreground">
-                        <span className="text-foreground font-semibold">
-                          {block.tx_count}
-                        </span>{" "}
-                        txns
-                      </span>
+                    <div className="flex flex-wrap gap-3 text-xs">
+                      <Badge
+                        variant="outline"
+                        className="h-5 px-1.5 border-accent/20 text-accent/80 font-normal"
+                      >
+                        {block.tx_count} txns
+                      </Badge>
                       {block.size && (
-                        <span className="text-muted-foreground">
-                          <span className="text-foreground font-semibold">
-                            {formatSize(block.size)}
-                          </span>
+                        <span className="text-muted-foreground self-center">
+                          {formatSize(block.size)}
                         </span>
                       )}
                       {block.difficulty && (
-                        <span className="text-muted-foreground hidden sm:inline">
-                          Diff:{" "}
-                          <span className="text-foreground font-semibold">
-                            {(block.difficulty / 1e6).toFixed(2)}M
-                          </span>
+                        <span className="text-muted-foreground self-center hidden sm:inline">
+                          Diff: {(block.difficulty / 1e6).toFixed(2)}M
                         </span>
                       )}
                     </div>

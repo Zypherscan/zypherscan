@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Activity, Shield, Box } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Loader2, Activity, Shield, Box, ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Mempool = () => {
+  const navigate = useNavigate();
   const { getMempool } = useZcashAPI();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<{ count: number; transactions: any[] }>({
@@ -44,6 +45,14 @@ const Mempool = () => {
 
   return (
     <div className="container px-6 py-8 max-w-5xl mx-auto">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-muted-foreground hover:text-accent transition-colors mb-4"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span>Back</span>
+      </button>
+
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">

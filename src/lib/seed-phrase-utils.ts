@@ -18,20 +18,11 @@ export async function deriveUFVKFromSeed(
 ): Promise<string> {
   try {
     const wasm = await loadWasm();
-
-    console.log("🔐 Deriving UFVK from seed phrase...");
-    console.log("   - Account index:", accountIndex);
-    console.log("   - Network:", network);
-
     const ufvk = wasm.derive_ufvk_from_seed(
       seedPhrase.trim(),
       accountIndex,
       network
     );
-
-    console.log("✅ UFVK derived successfully");
-    console.log("   - Prefix:", ufvk.substring(0, 20) + "...");
-    console.log("   - Length:", ufvk.length);
 
     return ufvk;
   } catch (error) {

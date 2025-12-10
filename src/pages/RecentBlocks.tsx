@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
-import { Loader2, Box, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Loader2, Box, ArrowRight, ArrowLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
 const RecentBlocks = () => {
+  const navigate = useNavigate();
   const { getLatestBlocks } = useZcashAPI();
   const [loading, setLoading] = useState(true);
   const [blocks, setBlocks] = useState<any[]>([]);
@@ -13,9 +14,9 @@ const RecentBlocks = () => {
     const fetchBlocks = async () => {
       setLoading(true);
       try {
-        const result = (await getLatestBlocks(20)) as any; // Fetch 20 blocks
-        if (result && result.blocks) {
-          setBlocks(result.blocks);
+        const result = await getLatestBlocks(20);
+        if (Array.isArray(result)) {
+          setBlocks(result);
         }
       } catch (error) {
         console.error("Failed to fetch blocks:", error);
@@ -32,6 +33,14 @@ const RecentBlocks = () => {
 
   return (
     <div className="container px-6 py-8 max-w-5xl mx-auto">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-muted-foreground hover:text-accent transition-colors mb-6"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span>Back</span>
+      </button>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
           <Box className="w-8 h-8 text-accent" />
@@ -47,7 +56,7 @@ const RecentBlocks = () => {
           <Loader2 className="w-8 h-8 animate-spin text-accent" />
         </div>
       ) : (
-        <Card className="bg-card/50 border-accent/10 overflow-hidden">
+        <Card className="bg-card/50 border-accent/10 overflow-hidden min-h-[600px] flex flex-col">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="text-muted-foreground border-b border-border bg-accent/5">

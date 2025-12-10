@@ -1,10 +1,10 @@
-# ZShield Explorer
+# Zypherscan
 
 A privacy-first Zcash blockchain explorer with client-side shielded transaction viewing. Built with React, TypeScript, and modern web technologies.
 
 **Zero trust architecture** - Your viewing keys never leave your device. All transaction decryption happens client-side in your browser.
 
-![ZShield Explorer](https://img.shields.io/badge/Zcash-Privacy%20Explorer-F4A21B?style=for-the-badge&logo=zcash)
+![Zypherscan](https://img.shields.io/badge/Zcash-Privacy%20Explorer-F4A21B?style=for-the-badge&logo=zcash)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript)
 ![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react)
 
@@ -75,8 +75,8 @@ A privacy-first Zcash blockchain explorer with client-side shielded transaction 
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/zshield-explorer.git
-cd zshield-explorer
+git clone https://github.com/your-username/zypherscan.git
+cd zypherscan
 
 # Install dependencies
 pnpm install
@@ -154,7 +154,7 @@ src/
 
 ## 🔐 Security Architecture
 
-ZShield is designed with a zero-trust security model:
+Zypherscan is designed with a zero-trust security model:
 
 1. **No Server-Side Keys** - Viewing keys are stored only in the browser's localStorage
 2. **Client-Side Decryption** - All Zcash cryptography runs in WASM in the browser

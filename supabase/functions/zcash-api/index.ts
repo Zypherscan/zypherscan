@@ -12,7 +12,6 @@ const ZEBRA_RPC_URL = "https://zebra.up.railway.app";
 
 // Helper function to make JSON-RPC calls to Zebra
 async function zebraRPC(method: string, params: any[] = []) {
-  console.log(`Zebra RPC call: ${method}`, params);
   const response = await fetch(ZEBRA_RPC_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -25,10 +24,6 @@ async function zebraRPC(method: string, params: any[] = []) {
   });
 
   const data = await response.json();
-  console.log(
-    `Zebra RPC response for ${method}:`,
-    JSON.stringify(data).slice(0, 500)
-  );
 
   if (data.error) {
     throw new Error(data.error.message || "RPC Error");
@@ -45,16 +40,6 @@ serve(async (req) => {
   try {
     const { action, limit, id, txid, query, startHeight, endHeight } =
       await req.json();
-
-    console.log("Zcash API Request:", {
-      action,
-      limit,
-      id,
-      txid,
-      query,
-      startHeight,
-      endHeight,
-    });
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -73,7 +58,6 @@ serve(async (req) => {
           .limit(blockLimit);
 
         if (cachedBlocks && cachedBlocks.length > 0) {
-          console.log("Returning cached blocks:", cachedBlocks.length);
           return new Response(
             JSON.stringify({ success: true, blocks: cachedBlocks }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -84,8 +68,6 @@ serve(async (req) => {
           // Get blockchain info to find latest height
           const blockchainInfo = await zebraRPC("getblockchaininfo");
           const latestHeight = blockchainInfo.blocks;
-
-          console.log("Latest block height:", latestHeight);
 
           const limit = req.limit || 10;
           const blocks = [];
@@ -107,9 +89,6 @@ serve(async (req) => {
             });
           }
 
-          console.log("Fetched blocks from Zebra:", blocks.length);
-
-          // Cache blocks in database
           if (blocks.length > 0) {
             const { error: insertError } = await supabase
               .from("blocks")
@@ -117,8 +96,6 @@ serve(async (req) => {
 
             if (insertError) {
               console.error("Error caching blocks:", insertError);
-            } else {
-              console.log("Cached blocks successfully");
             }
           }
 
@@ -126,9 +103,7 @@ serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         } catch (error) {
-          console.log("Zebra RPC failed, trying Cipherscan API for blocks");
           try {
-            // Fallback to Cipherscan
             const infoResponse = await fetch(
               "https://api.mainnet.cipherscan.app/api/info"
             );
@@ -200,7 +175,6 @@ serve(async (req) => {
           .maybeSingle();
 
         if (cachedBlock) {
-          console.log("Returning cached block:", cachedBlock.height);
           return new Response(
             JSON.stringify({ success: true, block: cachedBlock }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -241,7 +215,7 @@ serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } catch (error) {
-          console.log("Zebra RPC failed for getBlock, trying Cipherscan");
+          console.log("Zebra RPC failed for getBlock, trying Scan API");
           try {
             const response = await fetch(
               `https://api.mainnet.cipherscan.app/api/block/${heightOrHash}`
@@ -313,7 +287,6 @@ serve(async (req) => {
           .maybeSingle();
 
         if (cachedTx) {
-          console.log("Returning cached transaction:", txid);
           return new Response(
             JSON.stringify({ success: true, transaction: cachedTx }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -356,7 +329,7 @@ serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } catch (error) {
-          console.log("Zebra RPC failed for getTransaction, trying Cipherscan");
+          console.log("Zebra RPC failed for getTransaction, trying Scan API");
           try {
             const response = await fetch(
               `https://api.mainnet.cipherscan.app/api/transaction/${txid}`
@@ -451,10 +424,10 @@ serve(async (req) => {
           });
         } catch (error) {
           console.log(
-            "Zebra RPC failed for getRawTransaction, trying Cipherscan"
+            "Zebra RPC failed for getRawTransaction, trying Scan API"
           );
 
-          // Try Cipherscan fallback
+          // Try Scan API fallback
           try {
             const response = await fetch(
               `https://api.mainnet.cipherscan.app/api/transaction/${txid}`
@@ -501,7 +474,7 @@ serve(async (req) => {
           );
         }
 
-        console.log("Searching for:", query);
+
 
         // Check if it's a block height (number)
         if (/^\d+$/.test(query)) {
@@ -534,7 +507,7 @@ serve(async (req) => {
               }
             );
           } catch (e) {
-            console.log("Zebra RPC failed for height, trying Cipherscan");
+            console.log("Zebra RPC failed for height, trying Scan API");
             try {
               const response = await fetch(
                 `https://api.mainnet.cipherscan.app/api/block/${query}`
@@ -573,7 +546,7 @@ serve(async (req) => {
                 );
               }
             } catch (err) {
-              console.log("Cipherscan API failed:", err);
+              console.log("Scan API failed:", err);
             }
           }
         }
@@ -608,7 +581,7 @@ serve(async (req) => {
               }
             );
           } catch (e) {
-            console.log("Zebra RPC failed for hash, trying Cipherscan");
+            console.log("Zebra RPC failed for hash, trying Scan API");
             try {
               const response = await fetch(
                 `https://api.mainnet.cipherscan.app/api/block/${query}`
@@ -647,7 +620,7 @@ serve(async (req) => {
                 );
               }
             } catch (err) {
-              console.log("Cipherscan API failed:", err);
+              console.log("Scan API failed:", err);
             }
           }
 
@@ -700,7 +673,7 @@ serve(async (req) => {
                 );
               }
             } catch (err) {
-              console.log("Cipherscan API failed for tx:", err);
+              console.log("Scan API failed for tx:", err);
             }
           }
         }
@@ -728,10 +701,6 @@ serve(async (req) => {
           );
         }
 
-        console.log(`Scanning blocks from ${startHeight} to ${endHeight}`);
-
-        // Proxy to Cipherscan API for compact blocks
-        // Note: In a production environment, this should connect to your own lightwalletd
         const response = await fetch(
           "https://api.mainnet.cipherscan.app/api/lightwalletd/scan",
           {
@@ -835,15 +804,6 @@ serve(async (req) => {
               getSafe("getpeerinfo"),
             ]);
 
-          // Log peer info structure for debugging
-          console.log(
-            "Peer info from Zebra:",
-            JSON.stringify(peerInfo?.slice(0, 2), null, 2)
-          );
-          if (peerInfo && peerInfo.length > 0) {
-            console.log("First peer keys:", Object.keys(peerInfo[0]));
-          }
-
           // If blockchainInfo is null, try Cipherscan
           let finalBlockchainInfo = blockchainInfo;
           if (!finalBlockchainInfo) {
@@ -900,7 +860,7 @@ serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         } catch (e) {
-          console.log("Zebra RPC failed, trying Cipherscan API");
+          console.log("Zebra RPC failed, trying Scan API");
           const response = await fetch(
             "https://api.mainnet.cipherscan.app/api/info"
           );

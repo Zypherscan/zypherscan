@@ -210,20 +210,17 @@ export function useWalletData(): WalletData {
           })
           .catch((err) => {
             console.error("Sync failed:", err);
-            console.log("Loading demo transactions for UI preview...");
             setTransactions(generateDemoTransactions());
             setIsSyncing(false);
           });
       } else {
         // WASM not available - load demo transactions
-        console.log("WASM not available, loading demo transactions...");
         setTransactions(generateDemoTransactions());
       }
 
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error loading wallet data:", err);
-      console.log("Loading demo transactions as fallback...");
       setTransactions(generateDemoTransactions());
       setError(
         err instanceof Error ? err.message : "Failed to load wallet data"

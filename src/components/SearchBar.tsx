@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 import { useToast } from "@/hooks/use-toast";
 
-export const SearchBar = () => {
+interface SearchBarProps {
+  variant?: "default" | "header";
+}
+
+export const SearchBar = ({ variant = "default" }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const { searchBlockchain } = useZcashAPI();
@@ -60,28 +64,46 @@ export const SearchBar = () => {
     }
   };
 
+  const isHeader = variant === "header";
+
   return (
-    <form onSubmit={handleSearch} className="w-full max-w-3xl mx-auto">
+    <form
+      onSubmit={handleSearch}
+      className={`w-full mx-auto ${isHeader ? "max-w-md" : "max-w-3xl"}`}
+    >
       <div className="relative group">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 transition-colors group-focus-within:text-accent" />
+        <Search
+          className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-accent ${
+            isHeader ? "h-4 w-4" : "h-5 w-5"
+          }`}
+        />
         <Input
           type="text"
-          placeholder="Search by block height, block hash, or transaction ID..."
+          placeholder={
+            isHeader
+              ? "Search block / tx..."
+              : "Search by block height, block hash, or transaction ID..."
+          }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           disabled={loading}
-          className="pl-12 pr-32 py-6 text-lg bg-card/50 backdrop-blur-sm border-accent/20 focus:border-accent font-mono transition-all"
+          className={`${
+            isHeader
+              ? "pl-10 pr-12 py-2 h-10 text-sm bg-[#1a1b26]/80 border-accent/10 focus:border-accent/40"
+              : "pl-12 pr-32 py-6 text-lg bg-card/50 backdrop-blur-sm border-accent/20 focus:border-accent"
+          } font-mono transition-all`}
         />
         <Button
           type="submit"
           disabled={loading || !searchQuery.trim()}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-accent hover:bg-accent/90 text-accent-foreground disabled:opacity-50"
+          className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-accent hover:bg-accent/90 text-accent-foreground disabled:opacity-50 ${
+            isHeader ? "h-8 w-8 p-0 min-w-0" : ""
+          }`}
         >
           {loading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent-foreground mr-2" />
-              Searching
-            </>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-accent-foreground" />
+          ) : isHeader ? (
+            <ArrowRight className="h-4 w-4" />
           ) : (
             <>
               Search
@@ -90,10 +112,12 @@ export const SearchBar = () => {
           )}
         </Button>
       </div>
-      <p className="text-center text-xs text-muted-foreground mt-3">
-        Enter a block height (e.g., 2500000), block hash, or transaction ID to
-        search
-      </p>
+      {!isHeader && (
+        <p className="text-center text-xs text-muted-foreground mt-3">
+          Enter a block height (e.g., 2500000), block hash, or transaction ID to
+          search
+        </p>
+      )}
     </form>
   );
 };

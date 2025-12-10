@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletData } from "@/hooks/useWalletData";
+import { useZcashAPI, NetworkStats, ZecPrice } from "@/hooks/useZcashAPI";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +27,11 @@ import {
   Unlock,
   Server,
   Box,
+  Globe,
+  DollarSign,
+  Cpu,
 } from "lucide-react";
+import { MarketStatsBanner } from "@/components/MarketStatsBanner";
 import { formatZEC, formatZECWithSymbol } from "@/lib/zcash-crypto";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { TransactionList } from "@/components/dashboard/TransactionList";
@@ -70,6 +75,11 @@ const Dashboard = () => {
     syncStatus,
   } = useWalletData();
 
+  const { getZecPrice, getNetworkStatus, getPrivacyStats } = useZcashAPI();
+  const [zecPrice, setZecPrice] = useState<ZecPrice | null>(null);
+  const [networkStats, setNetworkStats] = useState<NetworkStats | null>(null);
+  const [privacyStats, setPrivacyStats] = useState<any | null>(null);
+
   const [isRescanOpen, setIsRescanOpen] = useState(false);
   const [rescanHeight, setRescanHeight] = useState("");
 
@@ -78,6 +88,23 @@ const Dashboard = () => {
       navigate("/auth");
     }
   }, [isConnected, authLoading, navigate]);
+
+  useEffect(() => {
+    const fetchMarketData = async () => {
+      const price = await getZecPrice();
+      setZecPrice(price);
+      const network = await getNetworkStatus();
+      setNetworkStats(network);
+      const privacy = await getPrivacyStats();
+      setPrivacyStats(privacy);
+    };
+
+    if (isConnected) {
+      fetchMarketData();
+      const interval = setInterval(fetchMarketData, 60000); // Update every minute
+      return () => clearInterval(interval);
+    }
+  }, [isConnected, getZecPrice, getNetworkStatus, getPrivacyStats]);
 
   const handleRescan = () => {
     if (rescanHeight) {
@@ -188,6 +215,9 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Market & Network Stats Banner */}
+        <MarketStatsBanner />
+
         {/* Viewing Key Info Banner */}
         {viewingKeyInfo && (
           <div className="mb-6 p-4 rounded-lg bg-accent/5 border border-accent/20">
@@ -200,12 +230,12 @@ const Dashboard = () => {
                 {viewingKeyInfo.network === "mainnet" ? "Mainnet" : "Testnet"}
               </Badge>
               {viewingKeyInfo.components.hasOrchard && (
-                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                <Badge className="bg-terminal-green/20 text-terminal-green border-terminal-green/30">
                   Orchard
                 </Badge>
               )}
               {viewingKeyInfo.components.hasSapling && (
-                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
                   Sapling
                 </Badge>
               )}
@@ -263,6 +293,11 @@ const Dashboard = () => {
                 <Skeleton key={i} className="h-32" />
               ))}
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Skeleton className="h-80 lg:col-span-2" />
               <Skeleton className="h-80" />
@@ -315,18 +350,6 @@ const Dashboard = () => {
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border mt-12">
-        <div className="container px-6 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2024 ZShield Explorer. Built with the cypherpunk ethos.</p>
-            <p className="font-mono">
-              Client-side decryption • Zero knowledge • Full privacy
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

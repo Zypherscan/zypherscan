@@ -1,6 +1,6 @@
 /**
  * Zcash Network Configuration
- * Adapted from CipherScan for zshield-explorer
+ * Adapted from CipherScan for zypherscan
  * Provides network detection and RPC configuration
  */
 
