@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Shield, Clock, RefreshCw, ArrowRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ShieldedTransaction {
   txid: string;
@@ -61,10 +62,12 @@ const getPoolInfo = (tx: ShieldedTransaction) => {
 
 export const ShieldedActivityList = () => {
   const [transactions, setTransactions] = useState<ShieldedTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchTxs = useCallback(async (forceRefresh = false) => {
     if (forceRefresh) setRefreshing(true);
+    // Don't set loading to true on refresh, only use initial state
 
     try {
       const response = await fetch("/api/tx/shielded?limit=5");
@@ -91,14 +94,33 @@ export const ShieldedActivityList = () => {
       console.error("Failed to fetch shielded transactions:", error);
     } finally {
       if (forceRefresh) setRefreshing(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchTxs();
-    const interval = setInterval(() => fetchTxs(), 30000);
+    const interval = setInterval(() => fetchTxs(true), 30000);
     return () => clearInterval(interval);
   }, [fetchTxs]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4 min-h-[600px] flex flex-col">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Shield className="w-6 h-6 text-terminal-green" />
+            Shielded Activity
+          </h2>
+        </div>
+        <div className="grid gap-4 flex-1">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-28 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 min-h-[600px] flex flex-col">
@@ -121,13 +143,13 @@ export const ShieldedActivityList = () => {
         </Button>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 flex-1">
         {transactions.map((tx) => (
           <Link key={tx.txid} to={`/tx/${tx.txid}`}>
             <Card className="card-glow bg-card/50 backdrop-blur-sm p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10 group">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-terminal-green/10 border border-terminal-green/20 group-hover:bg-terminal-green/20 transition-colors">
+                  <div className="flex flex-col items-center justify-center w-12 h-12 rounded-full bg-terminal-green/10 border border-terminal-green/20 group-hover:bg-terminal-green/20 transition-colors shrink-0">
                     <Shield className="w-6 h-6 text-terminal-green" />
                   </div>
 

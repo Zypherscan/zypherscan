@@ -3,17 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
-import {
-  Shield,
-  Home,
-  BarChart3,
-  Unlock,
-  Wallet,
-  LogOut,
-  Search,
-  Menu,
-  ChevronDown,
-} from "lucide-react";
+import { Wallet, LogOut, Search, Menu, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +43,7 @@ export const Layout = ({ children }: LayoutProps) => {
           {/* Logo & Brand */}
           <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2.5">
-              <Shield className="w-7 h-7 text-accent" />
+              <img src="/logo.png" alt="Logo" className="w-7 h-7" />
               <div className="flex flex-col leading-none">
                 <span className="text-lg font-bold tracking-wide text-foreground">
                   ZYPHERSCAN
@@ -159,9 +149,7 @@ export const Layout = ({ children }: LayoutProps) => {
         <div className="container px-6 py-12">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="flex items-center gap-4">
-              <div className="bg-accent/10 p-2 rounded-lg">
-                <Shield className="w-8 h-8 text-accent" />
-              </div>
+              <img src="/logo.png" alt="Logo" className="w-10 h-10" />
               <div>
                 <p className="font-semibold text-lg">Zypherscan</p>
                 <p className="text-sm text-muted-foreground">
@@ -197,7 +185,7 @@ export const Layout = ({ children }: LayoutProps) => {
             <div className="text-center md:text-right">
               <p className="text-sm text-muted-foreground">© 2025 Zypherscan</p>
               <p className="text-xs font-mono text-muted-foreground mt-1 opacity-60">
-                Built with the cypherpunk ethos
+                Built with ❤️ by Zypherscan
               </p>
             </div>
           </div>
