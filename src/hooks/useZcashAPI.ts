@@ -123,23 +123,31 @@ export interface ZecPrice {
 const ZEBRA_RPC_URL = "/zebra/";
 const CIPHERSCAN_API_BASE = "/api";
 
+import { useNetwork } from "@/contexts/NetworkContext";
+
 export const useZcashAPI = () => {
+  const { apiBase } = useNetwork();
+
   // Helper for fetching from Cipherscan
   const fetchCipherscan = async (endpoint: string) => {
+    const url = `${apiBase}${endpoint}`;
     try {
-      const response = await fetch(`${CIPHERSCAN_API_BASE}${endpoint}`, {
+      const response = await fetch(url, {
         headers: {
           Accept: "application/json",
         },
       });
       // Return null for 404 or 400 (Bad Request) - let caller try other endpoints
-      if (response.status === 404 || response.status === 400) return null;
+      if (response.status === 404 || response.status === 400) {
+        console.warn(`Cipherscan API 404/400 for ${url}`);
+        return null;
+      }
       if (!response.ok) {
         throw new Error(`Cipherscan API error: ${response.statusText}`);
       }
       return await response.json();
     } catch (error) {
-      console.error(`Failed to fetch from Cipherscan (${endpoint}):`, error);
+      console.error(`Failed to fetch from Cipherscan (${url}):`, error);
       return null;
     }
   };
@@ -312,8 +320,8 @@ export const useZcashAPI = () => {
 
   const getRecentShieldedTransactions = useCallback(
     async (limit: number = 10) => {
-      // Preferred: Orchard fully shielded
-      const endpoint = `/tx/shielded?pool=orchard&type=fully-shielded&limit=${limit}`;
+      // Fetch latest shielded transactions (mixed, fully shielded, etc.)
+      const endpoint = `/tx/shielded?limit=${limit}`;
       let data = await fetchCipherscan(endpoint);
 
       // Cipherscan returns { transactions: [...] }

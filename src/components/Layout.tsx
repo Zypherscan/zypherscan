@@ -11,12 +11,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { useNetwork } from "@/contexts/NetworkContext";
+
 interface LayoutProps {
   children: ReactNode;
 }
 
 export const Layout = ({ children }: LayoutProps) => {
   const { isConnected, viewingKey, disconnect } = useAuth();
+  const { network, setNetwork } = useNetwork();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -55,10 +58,40 @@ export const Layout = ({ children }: LayoutProps) => {
             </Link>
 
             {/* Network Badge */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20">
-              <div className="w-1.5 h-1.5 rounded-full bg-terminal-green animate-pulse" />
-              <span className="text-xs font-medium text-accent">MAINNET</span>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 cursor-pointer hover:bg-accent/20 transition-colors">
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      network === "mainnet"
+                        ? "bg-terminal-green"
+                        : "bg-yellow-500"
+                    } animate-pulse`}
+                  />
+                  <span className="text-xs font-medium text-accent uppercase">
+                    {network}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-accent opacity-50" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="bg-[#12171d] border-border/20"
+              >
+                <DropdownMenuItem onClick={() => setNetwork("mainnet")}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-terminal-green" />
+                    <span>Mainnet</span>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setNetwork("testnet")}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                    <span>Testnet</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Search Bar (Header) */}

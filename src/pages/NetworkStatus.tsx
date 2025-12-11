@@ -18,6 +18,7 @@ import {
   HardDrive,
   ArrowLeft,
 } from "lucide-react";
+import { useNetwork } from "@/contexts/NetworkContext";
 
 // Helper to format large numbers
 const formatNumber = (num: number, maximumFractionDigits = 2) => {
@@ -39,9 +40,21 @@ const timeAgo = (timestamp?: number) => {
   return `${Math.floor(seconds / 3600)}h ago`;
 };
 
+// Helper to format hashrate
+const formatHashrate = (hashrate: number) => {
+  if (hashrate >= 1e18) return `${(hashrate / 1e18).toFixed(2)} EH/s`;
+  if (hashrate >= 1e15) return `${(hashrate / 1e15).toFixed(2)} PH/s`;
+  if (hashrate >= 1e12) return `${(hashrate / 1e12).toFixed(2)} TH/s`;
+  if (hashrate >= 1e9) return `${(hashrate / 1e9).toFixed(2)} GH/s`;
+  if (hashrate >= 1e6) return `${(hashrate / 1e6).toFixed(2)} MH/s`;
+  if (hashrate >= 1e3) return `${(hashrate / 1e3).toFixed(2)} kH/s`;
+  return `${hashrate.toFixed(2)} H/s`;
+};
+
 const NetworkStatus = () => {
   const navigate = useNavigate();
   const { getNetworkStatus } = useZcashAPI();
+  const { network } = useNetwork();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<NetworkStats | null>(null);
 
@@ -95,8 +108,8 @@ const NetworkStatus = () => {
         <h1 className="text-4xl font-bold tracking-tight">
           Network Statistics
         </h1>
-        <p className="text-muted-foreground text-lg">
-          Real-time Zcash mainnet metrics. Mining stats, network health, and
+        <p className="text-muted-foreground text-lg capitalize">
+          Real-time Zcash {network} metrics. Mining stats, network health, and
           blockchain data.
         </p>
       </div>
@@ -250,7 +263,7 @@ const NetworkStatus = () => {
           </div>
           <div className="space-y-1">
             <p className="text-3xl font-mono font-bold">
-              {formatNumber(data.height, 0)}
+              {formatNumber(data.height, 2)}
             </p>
             <p className="text-sm text-muted-foreground">
               {data.height.toLocaleString()} blocks
@@ -267,7 +280,7 @@ const NetworkStatus = () => {
           </div>
           <div className="space-y-1">
             <p className="text-3xl font-mono font-bold">
-              {formatNumber(data.blockchain.tx24h, 0)}
+              {formatNumber(data.blockchain.tx24h, 2)}
             </p>
             <p className="text-sm text-muted-foreground">
               {data.blockchain.tx24h.toLocaleString()} transactions
@@ -304,7 +317,7 @@ const NetworkStatus = () => {
               <Zap className="w-3 h-3 text-accent" /> Hashrate
             </p>
             <p className="font-mono font-bold text-lg">
-              {(data.hashrate / 1000000).toFixed(2)} MH/s
+              {formatHashrate(data.hashrate)}
             </p>
           </Card>
           <Card className="p-4 bg-card/30 border-accent/5">

@@ -16,34 +16,37 @@ import RecentBlocks from "./pages/RecentBlocks";
 import NotFound from "./pages/NotFound";
 
 import { Layout } from "./components/Layout";
+import { NetworkProvider } from "@/contexts/NetworkContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/privacy" element={<PrivacyDashboard />} />
-            <Route path="/tx/:txid" element={<TransactionDetails />} />
-            <Route path="/block/:height" element={<BlockDetails />} />
-            <Route path="/decrypt" element={<DecryptTool />} />
-            <Route path="/mempool" element={<Mempool />} />
-            <Route path="/network" element={<NetworkStatus />} />
-            <Route path="/blocks" element={<RecentBlocks />} />
+    <NetworkProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/privacy" element={<PrivacyDashboard />} />
+              <Route path="/tx/:txid" element={<TransactionDetails />} />
+              <Route path="/block/:height" element={<BlockDetails />} />
+              <Route path="/decrypt" element={<DecryptTool />} />
+              <Route path="/mempool" element={<Mempool />} />
+              <Route path="/network" element={<NetworkStatus />} />
+              <Route path="/blocks" element={<RecentBlocks />} />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
-    </TooltipProvider>
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </TooltipProvider>
+    </NetworkProvider>
   </QueryClientProvider>
 );
 
