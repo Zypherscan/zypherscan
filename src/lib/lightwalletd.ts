@@ -140,8 +140,6 @@ class LightwalletdService {
       ) {
         const batchEnd = Math.min(currentHeight + BATCH_SIZE, targetHeight);
 
-        console.log(`Scanning blocks ${currentHeight} to ${batchEnd}...`);
-
         // Fetch compact blocks via Supabase Proxy
         const { data, error } = await supabase.functions.invoke("zcash-api", {
           body: {
@@ -172,7 +170,6 @@ class LightwalletdService {
           );
 
           if (decryptedTxs.length > 0) {
-            console.log(`Found ${decryptedTxs.length} transactions!`);
             matchesFound += decryptedTxs.length;
             decryptedTxs.forEach((tx) => onTransaction(tx));
           }

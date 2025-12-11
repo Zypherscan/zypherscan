@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { decryptMemo, DecryptedOutput } from "@/lib/wasm-loader";
 import { useAuth } from "@/hooks/useAuth";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 import { Button } from "@/components/ui/button";
@@ -7,6 +9,16 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   ArrowLeft,
   ArrowDownRight,
@@ -28,14 +40,20 @@ import { toast } from "sonner";
 
 interface TransactionDetails {
   txid: string;
-  hex?: string; // Raw transaction hex for decryption
+  hex?: string;
+  // Cipherscan API uses camelCase
   blockhash?: string;
+  blockHash?: string;
   blockheight?: number;
-  height?: number; // API returns "height" instead of "blockheight"
+  blockHeight?: string | number;
+  height?: number;
   confirmations?: number;
   time?: number;
+  blockTime?: string | number;
+  timestamp?: number;
   version: number;
-  locktime: number;
+  locktime: number | string;
+  // Old format (vin/vout)
   vin?: {
     txid?: string;
     vout?: number;
@@ -51,35 +69,32 @@ interface TransactionDetails {
       addresses?: string[];
     };
   }[];
-  vShieldedSpend?: {
-    cv: string;
-    anchor: string;
-    nullifier: string;
-  }[];
-  vShieldedOutput?: {
-    cv: string;
-    cmu: string;
-    ephemeralKey: string;
-  }[];
+  // Cipherscan API format (new fields)
+  inputCount?: number;
+  outputCount?: number;
+  vShieldedSpend?: any[];
+  vShieldedOutput?: any[];
   valueBalance?: number;
+  valueBalanceSapling?: number;
+  valueBalanceOrchard?: number;
+  hasSapling?: boolean;
+  hasOrchard?: boolean;
+  hasSprout?: boolean;
+  orchardActions?: number;
+  shieldedSpends?: number;
+  shieldedOutputs?: number;
   size?: number;
   overwintered?: boolean;
   expiryHeight?: number;
   orchard?: {
-    actions: {
-      cv: string;
-      nullifier: string;
-      cmx: string;
-      encryptedNote: {
-        epk: string;
-        encCiphertext: string;
-        outCiphertext: string;
-      };
-    }[];
+    actions: any[];
     flags: number;
     valueBalance: number;
     valueBalanceOrchard: number;
   };
+  // Additional fields for accurate display
+  fee?: number;
+  value?: number;
 }
 
 const TransactionDetails = () => {
@@ -99,12 +114,13 @@ const TransactionDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedTxid, setCopiedTxid] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !isConnected) {
-      navigate("/auth");
-    }
-  }, [isConnected, authLoading, navigate]);
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [decryptedData, setDecryptedData] = useState<DecryptedOutput | null>(
+    null
+  );
+  const [showKeyDialog, setShowKeyDialog] = useState(false);
+  const [manualKey, setManualKey] = useState("");
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -116,7 +132,9 @@ const TransactionDetails = () => {
       try {
         const result = await searchBlockchain(txid);
         if (result.success && result.type === "transaction") {
-          setTransaction(result.result);
+          // Force cast as we know it's a transaction result matching our interface
+          const txData = result.result as unknown as TransactionDetails;
+          setTransaction(txData);
         } else {
           setError("Transaction not found");
         }
@@ -142,15 +160,93 @@ const TransactionDetails = () => {
 
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
-    return date.toLocaleString();
+    // Format: "2 minutes ago (Dec 10, 2025, 10:25:32 PM GMT+5:30)" style
+    const now = new Date();
+    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    let ago = "";
+    if (diffSeconds < 60) ago = `${diffSeconds} seconds ago`;
+    else if (diffSeconds < 3600)
+      ago = `${Math.floor(diffSeconds / 60)} minutes ago`;
+    else if (diffSeconds < 86400)
+      ago = `${Math.floor(diffSeconds / 3600)} hours ago`;
+    else ago = `${Math.floor(diffSeconds / 86400)} days ago`;
+
+    return `${ago} (${date.toLocaleString()})`;
+  };
+
+  const executeDecryption = async (keyToUse: string) => {
+    setIsDecrypting(true);
+    try {
+      // 1. Fetch Raw Transaction Hex (via Supabase Proxy to Zebra/Lightwalletd)
+      const { data: response, error: apiError } =
+        await supabase.functions.invoke("zcash-api", {
+          body: { action: "getRawTransaction", txid },
+        });
+
+      if (apiError || !response || !response.hex) {
+        throw new Error("Failed to fetch raw transaction hex");
+      }
+
+      // 2. Decrypt using WASM
+      const result = await decryptMemo(response.hex, keyToUse);
+
+      if (result) {
+        setDecryptedData(result);
+        toast.success("Transaction decrypted successfully!");
+        // Optional: Save connection if desired, but user just asked to decrypt
+        // localStorage.setItem("zcash_viewing_key", keyToUse);
+        // localStorage.setItem("zcash_connected", "true");
+      }
+    } catch (err) {
+      console.error("Decryption failed:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to decrypt transaction"
+      );
+    } finally {
+      setIsDecrypting(false);
+      setShowKeyDialog(false);
+    }
+  };
+
+  const handleDecrypt = async () => {
+    if (!txid) return;
+
+    if (viewingKey) {
+      // Wallet connected, decrypt directly
+      executeDecryption(viewingKey);
+    } else {
+      // Wallet not connected, ask for key
+      setShowKeyDialog(true);
+    }
+  };
+
+  const handleManualDecrypt = () => {
+    if (!manualKey) {
+      toast.error("Please enter a viewing key");
+      return;
+    }
+    executeDecryption(manualKey);
   };
 
   const hasShieldedActivity = (tx: TransactionDetails) => {
-    return (
-      (tx.vShieldedSpend && tx.vShieldedSpend.length > 0) ||
-      (tx.vShieldedOutput && tx.vShieldedOutput.length > 0) ||
-      (tx.orchard && tx.orchard.actions && tx.orchard.actions.length > 0)
-    );
+    // Check explicit flags first (Cipherscan often provides these)
+    if (tx.hasSapling || tx.hasOrchard || tx.hasSprout) return true;
+
+    // Check array lengths (handling various naming conventions like camelCase vs snake_case)
+    const hasSaplingSpend =
+      (tx.vShieldedSpend?.length || 0) > 0 ||
+      ((tx as any).v_shielded_spend?.length || 0) > 0 ||
+      ((tx as any).shieldedSpends?.length || 0) > 0;
+
+    const hasSaplingOutput =
+      (tx.vShieldedOutput?.length || 0) > 0 ||
+      ((tx as any).v_shielded_output?.length || 0) > 0 ||
+      ((tx as any).shieldedOutputs?.length || 0) > 0;
+
+    const hasOrchardAction =
+      (tx.orchard?.actions?.length || 0) > 0 || (tx.orchardActions || 0) > 0;
+
+    return hasSaplingSpend || hasSaplingOutput || hasOrchardAction;
   };
 
   const getTransactionType = (tx: TransactionDetails) => {
@@ -158,7 +254,7 @@ const TransactionDetails = () => {
     const hasTransparentOut = tx.vout && tx.vout.some((v) => v.value > 0);
     const hasShieldedIn =
       (tx.vShieldedSpend && tx.vShieldedSpend.length > 0) ||
-      (tx.orchard && tx.orchard.actions && tx.orchard.actions.length > 0); // Orchard actions are both spend/output
+      (tx.orchard && tx.orchard.actions && tx.orchard.actions.length > 0);
     const hasShieldedOut =
       (tx.vShieldedOutput && tx.vShieldedOutput.length > 0) ||
       (tx.orchard && tx.orchard.actions && tx.orchard.actions.length > 0);
@@ -184,33 +280,53 @@ const TransactionDetails = () => {
   const getTypeBadge = (type: string) => {
     const badges: Record<string, { label: string; className: string }> = {
       "z-to-z": {
-        label: "Fully Shielded",
+        label: "FULLY SHIELDED",
         className:
           "bg-terminal-green/20 text-terminal-green border-terminal-green/30",
       },
       "t-to-z": {
-        label: "Shielding",
-        className: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+        label: "SHIELDING",
+        className: "bg-accent/20 text-accent border-accent/30",
       },
       "z-to-t": {
-        label: "Deshielding",
+        label: "DESHIELDING",
         className: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
       },
       "t-to-t": {
-        label: "Transparent",
+        label: "TRANSPARENT",
         className: "bg-gray-500/20 text-gray-300 border-gray-500/30",
       },
       mixed: {
-        label: "Mixed",
-        className: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+        label: "MIXED",
+        className: "bg-accent/20 text-accent border-accent/30",
       },
     };
     const badge = badges[type] || badges.mixed;
     return (
-      <Badge variant="outline" className={badge.className}>
+      <Badge
+        variant="outline"
+        className={`${badge.className} ml-3 uppercase text-xs tracking-wider px-2 py-0.5`}
+      >
         {badge.label}
       </Badge>
     );
+  };
+
+  const getTypeDescription = (type: string) => {
+    switch (type) {
+      case "z-to-z":
+        return "Shielded transaction: inputs -> shielded outputs";
+      case "t-to-z":
+        return "Shielding transaction: transparent inputs -> shielded outputs";
+      case "z-to-t":
+        return "Deshielding transaction: shielded inputs -> transparent outputs";
+      case "t-to-t":
+        return "Transparent transaction: inputs -> outputs";
+      case "mixed":
+        return "Mixed transaction: complex inputs -> outputs";
+      default:
+        return "Transaction details";
+    }
   };
 
   if (authLoading) {
@@ -222,21 +338,16 @@ const TransactionDetails = () => {
   }
 
   // Get block height from either 'height' or 'blockheight' field
-  const blockHeight = transaction?.height || transaction?.blockheight;
+  const blockHeight = transaction?.blockHeight
+    ? typeof transaction.blockHeight === "string"
+      ? parseInt(transaction.blockHeight)
+      : transaction.blockHeight
+    : transaction?.height || transaction?.blockheight;
+  const txType = transaction ? getTransactionType(transaction) : "mixed";
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Main Content */}
-      <main className="container px-6 py-8">
-        <Button
-          variant="outline"
-          onClick={() => navigate(-1)}
-          className="mb-6 border-accent/50"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-
+    <div className="min-h-screen bg-background pb-20">
+      <main className="container px-4 md:px-6 py-8 max-w-6xl mx-auto">
         {loading ? (
           <div className="space-y-6">
             <Skeleton className="h-20 w-full" />
@@ -244,409 +355,517 @@ const TransactionDetails = () => {
             <Skeleton className="h-48 w-full" />
           </div>
         ) : error ? (
-          <Card className="p-8 text-center">
-            <p className="text-destructive mb-4">{error}</p>
+          <Card className="p-8 text-center bg-card/40 border-destructive/30">
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <p className="text-xl font-bold text-destructive mb-2">
+              Transaction Not Found
+            </p>
+            <p className="text-muted-foreground mb-6">{error}</p>
             <Button onClick={() => navigate("/")} variant="outline">
               Return to Explorer
             </Button>
           </Card>
         ) : transaction ? (
           <div className="space-y-6">
-            {/* Transaction Header */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-xl bg-accent/20 flex items-center justify-center">
-                  <Activity className="w-8 h-8 text-accent" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h1 className="text-2xl font-bold">Transaction</h1>
-                    {getTypeBadge(getTransactionType(transaction))}
+            {/* Back Button */}
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-muted-foreground hover:text-accent transition-colors mb-4"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back</span>
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center mb-2">
+              <h1 className="text-3xl font-bold text-white">
+                Transaction Details
+              </h1>
+              {getTypeBadge(txType)}
+            </div>
+
+            {/* Info Box (Theme) */}
+            <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-accent mt-0.5" />
+              <span className="text-muted-foreground text-sm">
+                <strong className="font-semibold text-foreground">
+                  {txType === "mixed"
+                    ? "Mixed transaction"
+                    : "Transaction info"}
+                  :
+                </strong>{" "}
+                {getTypeDescription(txType)}
+              </span>
+            </div>
+
+            {/* Decrypt Banner (Purple) */}
+            {hasShieldedActivity(transaction) && !decryptedData && (
+              <div className="bg-[#1a1b26] border border-purple-500/30 rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4 card-glow relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+                <div className="flex items-start gap-4 z-10">
+                  <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
+                    <Lock className="w-5 h-5 text-purple-400" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm text-muted-foreground break-all">
-                      {txid?.slice(0, 20)}...{txid?.slice(-10)}
-                    </span>
+                  <div>
+                    <h3 className="text-purple-100 font-semibold mb-1">
+                      Is this your transaction?
+                    </h3>
+                    <p className="text-sm text-purple-300/70">
+                      Use your viewing key to decrypt shielded amounts and memos
+                      client-side
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleDecrypt}
+                  disabled={isDecrypting}
+                  className="bg-purple-600 hover:bg-purple-700 text-white border-none z-10 shrink-0 min-w-[140px]"
+                >
+                  {isDecrypting ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <Unlock className="w-4 h-4 mr-2" />
+                  )}
+                  {isDecrypting ? "Decrypting..." : "Decrypt This TX"}
+                </Button>
+              </div>
+            )}
+
+            {/* Decrypted Results Banner (Success) */}
+            {decryptedData && (
+              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6 animate-in fade-in slide-in-from-top-4">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                    <Unlock className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-green-100 font-semibold mb-1">
+                      Transaction Decrypted Successfully
+                    </h3>
+                    <p className="text-sm text-green-300/70">
+                      The following information was recovered using your viewing
+                      key
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-black/40 p-4 rounded-lg border border-green-500/20">
+                    <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider">
+                      Amount
+                    </p>
+                    <p className="text-2xl font-mono font-bold text-green-400">
+                      {decryptedData.amount.toFixed(8)} ZEC
+                    </p>
+                  </div>
+                  <div className="bg-black/40 p-4 rounded-lg border border-green-500/20">
+                    <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider">
+                      Memo
+                    </p>
+                    <p className="text-sm font-mono text-gray-300 break-all whitespace-pre-wrap">
+                      {decryptedData.memo || "(No memo)"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Main Details Card */}
+            <Card className="bg-[#0f1016] border-gray-800 p-0 overflow-hidden">
+              <div className="p-6 space-y-6">
+                {/* Hash */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
+                    <Hash className="w-4 h-4" /> Transaction Hash
+                  </div>
+                  <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg border border-gray-800">
+                    <code className="text-accent font-mono text-sm break-all flex-1">
+                      {transaction.txid}
+                    </code>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="shrink-0"
+                      className="h-8 w-8 text-gray-500 hover:text-white"
                       onClick={handleCopyTxid}
                     >
                       {copiedTxid ? (
-                        <Check className="w-4 h-4 text-terminal-green" />
+                        <Check className="w-4 h-4 text-green-500" />
                       ) : (
                         <Copy className="w-4 h-4" />
                       )}
                     </Button>
                   </div>
                 </div>
-              </div>
 
-              {blockHeight && (
-                <Link to={`/block/${blockHeight}`}>
-                  <Button variant="outline" className="border-accent/30">
-                    <Box className="w-4 h-4 mr-2" />
-                    Block #{blockHeight.toLocaleString()}
-                  </Button>
-                </Link>
-              )}
-            </div>
-
-            {/* Shielded Activity Notice */}
-            {hasShieldedActivity(transaction) && (
-              <Alert className="bg-accent/5 border-accent/20">
-                <Shield className="h-5 w-5 text-accent" />
-                <AlertDescription className="ml-2">
-                  <p className="font-medium text-accent">
-                    This transaction contains shielded activity
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {viewingKey
-                      ? "Your viewing key can decrypt outputs belonging to your addresses."
-                      : "Connect your viewing key to decrypt shielded outputs that belong to you."}
-                  </p>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Transaction Details */}
-            <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10 overflow-hidden">
-              <div className="p-6 border-b border-border">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-accent" />
-                  Transaction Details
-                </h2>
-              </div>
-
-              <div className="divide-y divide-border">
-                {/* Confirmations */}
-                {transaction.confirmations !== undefined && (
-                  <div className="p-4 flex items-center justify-between">
-                    <span className="text-muted-foreground">Confirmations</span>
-                    <Badge
-                      className={
-                        transaction.confirmations < 10
-                          ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
-                          : "bg-terminal-green/20 text-terminal-green border-terminal-green/30"
-                      }
-                    >
-                      {transaction.confirmations.toLocaleString()}
-                    </Badge>
-                  </div>
-                )}
-
-                {/* Timestamp */}
-                {transaction.time && (
-                  <div className="p-4 flex items-center justify-between">
-                    <span className="text-muted-foreground flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      Timestamp
+                {/* Stats Grid */}
+                <div className="grid gap-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <span className="text-gray-400 text-sm flex items-center gap-2">
+                      <Activity className="w-4 h-4" /> Status
                     </span>
-                    <span>{formatTimestamp(transaction.time)}</span>
+                    <div className="md:col-span-3">
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-3 py-1">
+                        <Check className="w-3 h-3 mr-1" /> Success
+                      </Badge>
+                    </div>
                   </div>
-                )}
 
-                {/* Value Balance (for Sapling) */}
-                {transaction.valueBalance !== undefined &&
-                  transaction.valueBalance !== 0 && (
-                    <div className="p-4 flex items-center justify-between">
-                      <span className="text-muted-foreground">
-                        Sapling Value Balance
-                      </span>
-                      <span
-                        className={`font-mono ${
-                          transaction.valueBalance > 0
-                            ? "text-terminal-green"
-                            : "text-red-400"
-                        }`}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <span className="text-gray-400 text-sm flex items-center gap-2">
+                      <Box className="w-4 h-4" /> Block
+                    </span>
+                    <div className="md:col-span-3 flex items-center gap-2">
+                      <Link
+                        to={`/block/${blockHeight}`}
+                        className="text-accent hover:underline font-mono"
                       >
-                        {transaction.valueBalance > 0 ? "+" : ""}
-                        {transaction.valueBalance.toFixed(8)} ZEC
+                        #{blockHeight?.toLocaleString()}
+                      </Link>
+                      <span className="text-gray-500 text-sm">
+                        ({transaction.confirmations} confirmations)
                       </span>
                     </div>
-                  )}
+                  </div>
 
-                {/* Value Balance (for Orchard) */}
-                {transaction.orchard &&
-                  transaction.orchard.valueBalanceOrchard !== undefined &&
-                  transaction.orchard.valueBalanceOrchard !== 0 && (
-                    <div className="p-4 flex items-center justify-between">
-                      <span className="text-muted-foreground">
-                        Orchard Value Balance
-                      </span>
-                      <span
-                        className={`font-mono ${
-                          transaction.orchard.valueBalanceOrchard > 0
-                            ? "text-terminal-green"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {transaction.orchard.valueBalanceOrchard > 0 ? "+" : ""}
-                        {transaction.orchard.valueBalanceOrchard.toFixed(8)} ZEC
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <span className="text-gray-400 text-sm flex items-center gap-2">
+                      <Clock className="w-4 h-4" /> Timestamp
+                    </span>
+                    <div className="md:col-span-3 text-white text-sm">
+                      {(() => {
+                        const timestamp =
+                          transaction.blockTime ||
+                          transaction.time ||
+                          transaction.timestamp;
+                        if (!timestamp) return "N/A";
+                        // Parse to number
+                        let numTimestamp =
+                          typeof timestamp === "string"
+                            ? parseInt(timestamp)
+                            : timestamp;
+                        // If timestamp is in milliseconds (> year 2100 in seconds), convert to seconds
+                        if (numTimestamp > 4102444800) {
+                          numTimestamp = Math.floor(numTimestamp / 1000);
+                        }
+                        return formatTimestamp(numTimestamp);
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <span className="text-gray-400 text-sm flex items-center gap-2">
+                      Transaction Fee
+                    </span>
+                    <div className="md:col-span-3 text-white font-mono text-sm">
+                      {transaction.fee
+                        ? `${transaction.fee.toFixed(8)} ZEC`
+                        : "0.00000000 ZEC"}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                    <span className="text-gray-400 text-sm flex items-center gap-2">
+                      Value
+                    </span>
+                    <div className="md:col-span-3 text-white font-mono text-sm font-bold">
+                      {transaction.value !== undefined &&
+                      transaction.value !== null
+                        ? `${transaction.value.toFixed(8)} ZEC`
+                        : "0.00000000 ZEC"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Show More Details */}
+              <div className="border-t border-gray-800">
+                <button
+                  onClick={() => setShowMoreDetails(!showMoreDetails)}
+                  className="w-full flex items-center gap-2 p-4 text-accent hover:text-accent/80 text-sm font-medium transition-colors"
+                >
+                  {showMoreDetails ? (
+                    <ArrowDownRight className="w-4 h-4 rotate-180 transition-transform" />
+                  ) : (
+                    <ArrowDownRight className="w-4 h-4 transition-transform" />
+                  )}
+                  {showMoreDetails ? "Hide Details" : "Show More Details"}
+                </button>
+                {showMoreDetails && (
+                  <div className="p-6 bg-black/20 space-y-4 border-t border-gray-800 animate-in slide-in-from-top-2">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <span className="text-gray-500 text-sm">Version</span>
+                      <span className="text-gray-300 font-mono text-sm">
+                        {transaction.version}
                       </span>
                     </div>
-                  )}
-
-                {/* Size */}
-                {transaction.size && (
-                  <div className="p-4 flex items-center justify-between">
-                    <span className="text-muted-foreground">Size</span>
-                    <span className="font-mono">
-                      {transaction.size.toLocaleString()} bytes
-                    </span>
-                  </div>
-                )}
-
-                {/* Lock Time */}
-                <div className="p-4 flex items-center justify-between">
-                  <span className="text-muted-foreground">Lock Time</span>
-                  <span className="font-mono">{transaction.locktime}</span>
-                </div>
-
-                {/* Version */}
-                <div className="p-4 flex items-center justify-between">
-                  <span className="text-muted-foreground">Version</span>
-                  <span className="font-mono">{transaction.version}</span>
-                </div>
-
-                {/* Expiry Height */}
-                {transaction.expiryHeight && (
-                  <div className="p-4 flex items-center justify-between">
-                    <span className="text-muted-foreground">Expiry Height</span>
-                    <span className="font-mono">
-                      {transaction.expiryHeight.toLocaleString()}
-                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <span className="text-gray-500 text-sm">Lock Time</span>
+                      <span className="text-gray-300 font-mono text-sm">
+                        {transaction.locktime}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <span className="text-gray-500 text-sm">Size</span>
+                      <span className="text-gray-300 font-mono text-sm">
+                        {transaction.size} bytes
+                      </span>
+                    </div>
+                    {transaction.hasOrchard && transaction.orchardActions && (
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <span className="text-gray-500 text-sm">
+                          Orchard Actions
+                        </span>
+                        <span className="text-gray-300 font-mono text-sm">
+                          {transaction.orchardActions}
+                        </span>
+                      </div>
+                    )}
+                    {transaction.valueBalanceOrchard &&
+                      Number(transaction.valueBalanceOrchard) !== 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <span className="text-gray-500 text-sm">
+                            Orchard Value Balance
+                          </span>
+                          <span className="text-purple-400 font-mono text-sm font-bold">
+                            {Number(transaction.valueBalanceOrchard) > 0
+                              ? "+"
+                              : ""}
+                            {Number(transaction.valueBalanceOrchard).toFixed(8)}{" "}
+                            ZEC
+                          </span>
+                        </div>
+                      )}
+                    {(transaction.blockhash || transaction.blockHash) && (
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <span className="text-gray-500 text-sm">
+                          Block Hash
+                        </span>
+                        <span className="text-gray-300 font-mono text-sm truncate block md:col-span-3">
+                          {transaction.blockhash || transaction.blockHash}
+                        </span>
+                      </div>
+                    )}
+                    {transaction.expiryHeight && (
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <span className="text-gray-500 text-sm">
+                          Expiry Height
+                        </span>
+                        <span className="text-gray-300 font-mono text-sm">
+                          {transaction.expiryHeight}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </Card>
 
-            {/* Shielded Spends */}
-            {transaction.vShieldedSpend &&
-              transaction.vShieldedSpend.length > 0 && (
-                <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10">
-                  <div className="p-6 border-b border-border">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <Lock className="w-5 h-5 text-blue-400" />
-                      Shielded Inputs ({transaction.vShieldedSpend.length})
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Sapling spends - amounts hidden
-                    </p>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {transaction.vShieldedSpend.slice(0, 10).map((spend, i) => (
-                      <div key={i} className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge
-                            variant="outline"
-                            className="border-blue-400/30 text-blue-300"
-                          >
-                            Input #{i + 1}
-                          </Badge>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-start justify-between gap-4">
-                            <span className="text-muted-foreground shrink-0">
-                              Nullifier
-                            </span>
-                            <span className="font-mono text-xs break-all opacity-75">
-                              {spend.nullifier}
-                            </span>
+            {/* Inputs & Outputs Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Inputs */}
+              <Card className="bg-[#0f1016] border-gray-800 p-0">
+                <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    <ArrowDownRight className="w-5 h-5 text-gray-400" /> Inputs
+                  </h3>
+                  <Badge variant="secondary" className="bg-gray-800">
+                    {(transaction.inputCount || 0) +
+                      (transaction.orchardActions || 0) ||
+                      (transaction.vin?.length || 0) +
+                        (transaction.vShieldedSpend?.length || 0) +
+                        (transaction.orchard?.actions?.length || 0)}
+                  </Badge>
+                </div>
+                <div className="divide-y divide-gray-800/50">
+                  {/* Shielded Spends (Sapling) */}
+                  {transaction.vShieldedSpend?.map((spend, i) => (
+                    <div
+                      key={`sapling-spend-${i}`}
+                      className="p-4 flex items-center gap-3 group hover:bg-white/5 transition-colors"
+                    >
+                      <Shield className="w-5 h-5 text-purple-400" />
+                      <div>
+                        <p className="text-sm text-purple-400 font-bold">
+                          (amount hidden)
+                        </p>
+                        <p className="text-xs text-gray-500 font-mono">
+                          Sapling Spend
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Orchard Actions (Spend side) */}
+                  {transaction.orchard?.actions?.map((action, i) => (
+                    <div
+                      key={`orchard-spend-${i}`}
+                      className="p-4 flex items-center gap-3 group hover:bg-white/5 transition-colors"
+                    >
+                      <Shield className="w-5 h-5 text-purple-400" />
+                      <div>
+                        <p className="text-sm text-purple-400 font-bold">
+                          (amount hidden)
+                        </p>
+                        <p className="text-xs text-gray-500 font-mono">
+                          Orchard Action
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Transparent Inputs */}
+                  {transaction.vin
+                    ?.filter((v) => v.txid)
+                    .map((input, i) => (
+                      <div
+                        key={`vin-${i}`}
+                        className="p-4 flex justify-between group hover:bg-white/5 transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] h-5 px-1 bg-transparent border-gray-700 text-gray-400"
+                            >
+                              VIN #{i}
+                            </Badge>
+                            <Link
+                              to={`/tx/${input.txid}`}
+                              className="text-accent hover:underline text-sm truncate block max-w-[150px] font-mono"
+                            >
+                              {input.txid?.slice(0, 16)}...
+                            </Link>
                           </div>
                         </div>
                       </div>
                     ))}
-                  </div>
-                </Card>
-              )}
+                </div>
+              </Card>
 
-            {/* Shielded Outputs */}
-            {transaction.vShieldedOutput &&
-              transaction.vShieldedOutput.length > 0 && (
-                <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10">
-                  <div className="p-6 border-b border-border">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <Unlock className="w-5 h-5 text-terminal-green" />
-                      Shielded Outputs ({transaction.vShieldedOutput.length})
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Sapling outputs - decryptable with viewing key
-                    </p>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {transaction.vShieldedOutput
-                      .slice(0, 10)
-                      .map((output, i) => (
-                        <div key={i} className="p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge
-                              variant="outline"
-                              className="border-terminal-green/30 text-terminal-green"
-                            >
-                              Output #{i + 1}
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className="border-accent/30"
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              Encrypted
-                            </Badge>
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-start justify-between gap-4">
-                              <span className="text-muted-foreground shrink-0">
-                                Note Commitment
-                              </span>
-                              <span className="font-mono text-xs break-all opacity-75">
-                                {output.cmu}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </Card>
-              )}
-
-            {/* Orchard Actions */}
-            {transaction.orchard &&
-              transaction.orchard.actions &&
-              transaction.orchard.actions.length > 0 && (
-                <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10">
-                  <div className="p-6 border-b border-border">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
+              {/* Outputs */}
+              <Card className="bg-[#0f1016] border-gray-800 p-0">
+                <div className="p-4 border-b border-gray-800 flex justify-between items-center">
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    <ArrowUpRight className="w-5 h-5 text-gray-400" /> Outputs
+                  </h3>
+                  <Badge variant="secondary" className="bg-gray-800">
+                    {(transaction.outputCount || 0) +
+                      (transaction.orchardActions || 0) ||
+                      (transaction.vout?.length || 0) +
+                        (transaction.vShieldedOutput?.length || 0) +
+                        (transaction.orchard?.actions?.length || 0)}
+                  </Badge>
+                </div>
+                <div className="divide-y divide-gray-800/50">
+                  {/* Shielded Outputs (Sapling) */}
+                  {transaction.vShieldedOutput?.map((output, i) => (
+                    <div
+                      key={`sapling-out-${i}`}
+                      className="p-4 flex items-center gap-3 group hover:bg-white/5 transition-colors"
+                    >
                       <Shield className="w-5 h-5 text-purple-400" />
-                      Orchard Actions ({transaction.orchard.actions.length})
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Orchard actions (Spend + Output)
-                    </p>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {transaction.orchard.actions
-                      .slice(0, 10)
-                      .map((action, i) => (
-                        <div key={i} className="p-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge
-                              variant="outline"
-                              className="border-purple-400/30 text-purple-300"
-                            >
-                              Action #{i + 1}
-                            </Badge>
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-start justify-between gap-4">
-                              <span className="text-muted-foreground shrink-0">
-                                Nullifier
-                              </span>
-                              <span className="font-mono text-xs break-all opacity-75">
-                                {action.nullifier}
-                              </span>
-                            </div>
-                            <div className="flex items-start justify-between gap-4">
-                              <span className="text-muted-foreground shrink-0">
-                                Commitment
-                              </span>
-                              <span className="font-mono text-xs break-all opacity-75">
-                                {action.cmx}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </Card>
-              )}
-
-            {/* Transparent Inputs */}
-            {transaction.vin &&
-              transaction.vin.filter((v) => v.txid).length > 0 && (
-                <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10">
-                  <div className="p-6 border-b border-border">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <ArrowDownRight className="w-5 h-5 text-accent" />
-                      Transparent Inputs (
-                      {transaction.vin.filter((v) => v.txid).length})
-                    </h2>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {transaction.vin
-                      .filter((v) => v.txid)
-                      .slice(0, 10)
-                      .map((input, i) => (
-                        <div key={i} className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <Badge
-                                variant="outline"
-                                className="border-accent/30 mb-2"
-                              >
-                                Input #{i + 1}
-                              </Badge>
-                              <p className="font-mono text-sm truncate max-w-[400px]">
-                                {input.txid}:{input.vout}
-                              </p>
-                            </div>
-                            <Link
-                              to={`/tx/${input.txid}`}
-                              className="text-accent hover:underline text-sm"
-                            >
-                              View Source
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </Card>
-              )}
-
-            {/* Transparent Outputs */}
-            {transaction.vout &&
-              transaction.vout.filter((v) => v.value > 0).length > 0 && (
-                <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10">
-                  <div className="p-6 border-b border-border">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <ArrowUpRight className="w-5 h-5 text-terminal-green" />
-                      Transparent Outputs (
-                      {transaction.vout.filter((v) => v.value > 0).length})
-                    </h2>
-                  </div>
-                  <div className="divide-y divide-border">
-                    {transaction.vout
-                      .filter((v) => v.value > 0)
-                      .slice(0, 10)
-                      .map((output, i) => (
-                        <div key={i} className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <Badge
-                                variant="outline"
-                                className="border-terminal-green/30 text-terminal-green mb-2"
-                              >
-                                Output #{output.n}
-                              </Badge>
-                              {output.scriptPubKey?.addresses && (
-                                <p className="font-mono text-sm truncate max-w-[400px]">
-                                  {output.scriptPubKey.addresses[0]}
-                                </p>
-                              )}
-                            </div>
-                            <span className="font-mono font-bold text-terminal-green">
-                              {output.value.toFixed(8)} ZEC
+                      <div>
+                        <p className="text-sm text-purple-400 font-bold">
+                          (amount hidden)
+                        </p>
+                        <p className="text-xs text-gray-500 font-mono">
+                          Sapling Output
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Orchard Actions (Output side) */}
+                  {transaction.orchard?.actions?.map((action, i) => (
+                    <div
+                      key={`orchard-out-${i}`}
+                      className="p-4 flex items-center gap-3 group hover:bg-white/5 transition-colors"
+                    >
+                      <Shield className="w-5 h-5 text-purple-400" />
+                      <div>
+                        <p className="text-sm text-purple-400 font-bold">
+                          (amount hidden)
+                        </p>
+                        <p className="text-xs text-gray-500 font-mono">
+                          Orchard Action
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Transparent Outputs */}
+                  {transaction.vout?.map((output, i) => (
+                    <div
+                      key={`vout-${i}`}
+                      className="p-4 flex justify-between group hover:bg-white/5 transition-colors"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] h-5 px-1 bg-transparent border-gray-700 text-gray-400"
+                          >
+                            VOUT #{output.n}
+                          </Badge>
+                          {output.scriptPubKey?.addresses?.[0] && (
+                            <span className="text-gray-400 text-sm font-mono truncate max-w-[150px]">
+                              {output.scriptPubKey.addresses[0].slice(0, 20)}...
                             </span>
-                          </div>
+                          )}
                         </div>
-                      ))}
-                  </div>
-                </Card>
-              )}
+                      </div>
+                      <span className="text-white font-mono font-bold text-sm">
+                        {output.value.toFixed(8)} ZEC
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
           </div>
         ) : null}
       </main>
+
+      <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
+        <DialogContent className="bg-[#1a1b26] border-gray-800 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-purple-400" />
+              Enter Viewing Key
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Your wallet is not connected. Please enter your Unified Viewing
+              Key (UFVK) to decrypt this transaction.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="viewing-key" className="text-gray-300">
+                Viewing Key
+              </Label>
+              <Input
+                id="viewing-key"
+                placeholder="uview..."
+                value={manualKey}
+                onChange={(e) => setManualKey(e.target.value)}
+                className="bg-black/40 border-gray-700 font-mono text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setShowKeyDialog(false)}
+              className="mr-2"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleManualDecrypt}
+              disabled={isDecrypting || !manualKey}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {isDecrypting ? "Decrypting..." : "Decrypt"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -87,7 +87,6 @@ export async function loadWasm(): Promise<ZcashWasm> {
     };
 
     wasmInitialized = true;
-    console.log("✅ WASM module loaded successfully");
     return wasmModule;
   } catch (error) {
     console.error("❌ Failed to load WASM:", error);
@@ -120,41 +119,18 @@ export async function decryptMemo(
   viewingKey: string
 ): Promise<DecryptedOutput> {
   try {
-    console.log("=== WASM Decryption Debug ===");
-    console.log("1. Loading WASM module...");
     const wasm = await loadWasm();
-    console.log("✓ WASM loaded");
-
-    console.log("2. Input validation:");
-    console.log("   - TX hex length:", txHex.length);
-    console.log("   - TX hex prefix:", txHex.substring(0, 20));
-    console.log("   - Viewing key length:", viewingKey.length);
-    console.log(
-      "   - Viewing key prefix:",
-      viewingKey.substring(0, 20) + "..."
-    );
-
-    console.log("3. Calling WASM decrypt_memo...");
     const startTime = performance.now();
 
     const result = wasm.decrypt_memo(txHex, viewingKey);
 
     const elapsed = performance.now() - startTime;
-    console.log(`✓ WASM decrypt_memo completed in ${elapsed.toFixed(2)}ms`);
-    console.log("4. Raw WASM result:", result);
 
     // Parse JSON response from WASM
     const parsed = JSON.parse(result);
-    console.log("5. Parsed result:", parsed);
-    console.log("   - Memo:", parsed.memo);
-    console.log("   - Amount:", parsed.amount, "ZEC");
-    console.log("=== Decryption Success ===");
 
     return parsed;
   } catch (error) {
-    console.error("=== WASM Decryption Failed ===");
-    console.error("Error type:", typeof error);
-    console.error("Error object:", error);
 
     if (error instanceof Error) {
       console.error("Error message:", error.message);
@@ -227,10 +203,6 @@ export async function filterCompactOutputsBatch(
   ) => void,
   shouldCancel?: () => boolean
 ): Promise<{ txid: string; height: number; timestamp: number }[]> {
-  console.log(
-    `🚀 [BATCH FILTER] Starting BATCH filtering of ${compactBlocks.length} compact blocks...`
-  );
-
   const wasm = await loadWasm();
   const totalBlocks = compactBlocks.length;
   const matchingTxs: { txid: string; height: number; timestamp: number }[] = [];
@@ -245,20 +217,12 @@ export async function filterCompactOutputsBatch(
   for (let chunkStart = 0; chunkStart < totalBlocks; chunkStart += CHUNK_SIZE) {
     // Check for cancellation before each chunk
     if (shouldCancel && shouldCancel()) {
-      console.log("🛑 [BATCH FILTER] Cancelled by user");
       throw new Error("Scan cancelled by user");
     }
 
     const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, totalBlocks);
     const chunk = compactBlocks.slice(chunkStart, chunkEnd);
 
-    console.log(
-      `🚀 [BATCH FILTER] Processing chunk ${
-        Math.floor(chunkStart / CHUNK_SIZE) + 1
-      }: blocks ${chunkStart} to ${chunkEnd}`
-    );
-
-    // Extract all Orchard outputs from this chunk
     const allOutputs: any[] = [];
 
     for (const block of chunk) {
@@ -285,10 +249,6 @@ export async function filterCompactOutputsBatch(
       continue;
     }
 
-    console.log(
-      `🚀 [BATCH FILTER] Chunk has ${allOutputs.length} Orchard outputs`
-    );
-
     // Call WASM batch API for this chunk
     const outputsJson = JSON.stringify(allOutputs);
     const startTime = Date.now();
@@ -298,11 +258,6 @@ export async function filterCompactOutputsBatch(
       viewingKey
     );
     const matches = JSON.parse(matchesJson);
-
-    const elapsed = Date.now() - startTime;
-    console.log(
-      `✅ [BATCH FILTER] Chunk filtered in ${elapsed}ms! Found ${matches.length} new matches`
-    );
 
     // Convert matches to TXIDs (deduplicate)
     for (const match of matches) {
@@ -315,12 +270,6 @@ export async function filterCompactOutputsBatch(
         };
         txMap.set(output.txid, tx);
         matchingTxs.push(tx);
-        console.log(
-          `✅ [BATCH FILTER] Found matching TX: ${output.txid.slice(
-            0,
-            8
-          )}... at block ${output.height} (${match.scope} scope)`
-        );
       }
     }
 
@@ -336,9 +285,6 @@ export async function filterCompactOutputsBatch(
     }
   }
 
-  console.log(
-    `✅ [BATCH FILTER] Filtering complete! Checked ${compactBlocks.length} blocks, found ${matchingTxs.length} matches`
-  );
   return matchingTxs;
 }
 

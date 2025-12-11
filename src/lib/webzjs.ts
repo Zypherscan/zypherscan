@@ -81,12 +81,6 @@ export async function initWebZjs(): Promise<boolean> {
     // import initWasm, { initThreadPool, WebWallet } from '@chainsafe/webzjs-wallet';
     // await initWasm();
     // await initThreadPool(navigator.hardwareConcurrency || 4);
-
-    console.log(
-      "[WebZjs] WASM module not available - package must be built from source"
-    );
-    console.log("[WebZjs] See: https://github.com/ChainSafe/WebZjs");
-
     return false;
   } catch (error) {
     console.error("[WebZjs] Failed to initialize:", error);

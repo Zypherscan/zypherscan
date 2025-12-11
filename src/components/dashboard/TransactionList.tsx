@@ -70,7 +70,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
       case "outgoing":
         return <ArrowUpRight className="w-4 h-4 text-red-400" />;
       case "internal":
-        return <ArrowLeftRight className="w-4 h-4 text-blue-400" />;
+        return <ArrowLeftRight className="w-4 h-4 text-purple-400" />;
     }
   };
 
@@ -79,7 +79,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
       incoming:
         "bg-terminal-green/20 text-terminal-green border-terminal-green/30",
       outgoing: "bg-red-400/20 text-red-400 border-red-400/30",
-      internal: "bg-blue-400/20 text-blue-400 border-blue-400/30",
+      internal: "bg-purple-400/20 text-purple-400 border-purple-400/30",
     };
     return (
       <Badge variant="outline" className={variants[type]}>
@@ -91,7 +91,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
   const getPoolBadge = (pool: DecryptedTransaction["pool"]) => {
     const variants = {
       orchard: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-      sapling: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+      sapling: "bg-purple-500/20 text-purple-300 border-purple-500/30",
       transparent: "bg-gray-500/20 text-gray-300 border-gray-500/30",
     };
     return (
@@ -305,7 +305,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
                         Block Height
                       </span>
                       <span className="font-mono text-sm">
-                        {tx.blockHeight.toLocaleString()}
+                        {tx.height.toLocaleString()}
                       </span>
                     </div>
 
@@ -317,12 +317,12 @@ export function TransactionList({ transactions }: TransactionListProps) {
                       <Badge
                         variant="outline"
                         className={
-                          tx.confirmations < 10
+                          (tx.confirmations || 0) < 10
                             ? "border-yellow-400/30 text-yellow-400"
                             : "border-terminal-green/30 text-terminal-green"
                         }
                       >
-                        {tx.confirmations.toLocaleString()}
+                        {(tx.confirmations || 0).toLocaleString()}
                       </Badge>
                     </div>
 

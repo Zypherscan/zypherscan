@@ -22,7 +22,7 @@ export const config = {
 
   // App settings
   app: {
-    name: "ZShield Explorer",
+    name: "Zypherscan",
     version: "1.0.0",
   },
 
