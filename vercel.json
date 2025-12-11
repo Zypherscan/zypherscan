@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/api-testnet/:path*",
+      "destination": "/api/proxy-testnet?path=:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/proxy-mainnet?path=:path*"
+    },
+    {
+      "source": "/zebra/:path*",
+      "destination": "/api/proxy-zebra?path=:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
