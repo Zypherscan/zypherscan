@@ -329,14 +329,6 @@ const TransactionDetails = () => {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
-      </div>
-    );
-  }
-
   // Get block height from either 'height' or 'blockheight' field
   const blockHeight = transaction?.blockHeight
     ? typeof transaction.blockHeight === "string"
@@ -344,6 +336,21 @@ const TransactionDetails = () => {
       : transaction.blockHeight
     : transaction?.height || transaction?.blockheight;
   const txType = transaction ? getTransactionType(transaction) : "mixed";
+
+    useEffect(() => {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    }, [transaction]);
+
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20">

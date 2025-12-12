@@ -53,7 +53,7 @@ const Mempool = () => {
         <span>Back</span>
       </button>
 
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-2">
         <div>
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
             <Activity className="w-8 h-8 text-accent" />
@@ -105,7 +105,7 @@ const Mempool = () => {
                     <div className="min-w-0">
                       <Link
                         to={`/tx/${tx.txid}`}
-                        className="font-mono text-sm hover:text-accent truncate block"
+                        className="font-mono text-sm hover:text-accent break-all w-full block"
                       >
                         {tx.txid}
                       </Link>

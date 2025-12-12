@@ -147,7 +147,7 @@ export const ShieldedActivityList = () => {
 
       <div className="grid gap-4 flex-1">
         {transactions.map((tx) => (
-          <Link key={tx.txid} to={`/tx/${tx.txid}`}>
+          <Link key={tx.txid} to={`/tx/${tx.txid}`} className="w-full">
             <Card className="card-glow bg-card/50 backdrop-blur-sm p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10 group">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
@@ -166,7 +166,7 @@ export const ShieldedActivityList = () => {
                       </div>
                     </div>
 
-                    <p className="font-mono text-xs text-muted-foreground truncate opacity-70 mb-2">
+                    <p className="font-mono text-xs text-muted-foreground break-all opacity-70 mb-2">
                       {tx.txid}
                     </p>
 

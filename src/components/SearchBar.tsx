@@ -8,9 +8,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface SearchBarProps {
   variant?: "default" | "header";
+  setIsMobileMenuOpen?: any
 }
 
-export const SearchBar = ({ variant = "default" }: SearchBarProps) => {
+export const SearchBar = ({ variant = "default", setIsMobileMenuOpen }: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const { searchBlockchain } = useZcashAPI();
@@ -19,6 +20,7 @@ export const SearchBar = ({ variant = "default" }: SearchBarProps) => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsMobileMenuOpen && setIsMobileMenuOpen(false);
     if (!searchQuery.trim()) return;
 
     setLoading(true);
@@ -90,7 +92,7 @@ export const SearchBar = ({ variant = "default" }: SearchBarProps) => {
           className={`${
             isHeader
               ? "pl-10 pr-12 py-2 h-10 text-sm bg-[#1a1b26]/80 border-accent/10 focus:border-accent/40"
-              : "pl-12 pr-32 py-6 text-lg bg-card/50 backdrop-blur-sm border-accent/20 focus:border-accent"
+              : "pl-12 pr-32 py-6 text-sm bg-card/50 backdrop-blur-sm border-accent/20 focus:border-accent"
           } font-mono transition-all`}
         />
         <Button
