@@ -1,15 +1,32 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
-import { Wallet, LogOut, Search, Menu, ChevronDown } from "lucide-react";
+import {
+  Wallet,
+  LogOut,
+  Menu,
+  ChevronDown,
+  Activity,
+  Box,
+  Shield,
+  FileText,
+  Settings,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { useNetwork } from "@/contexts/NetworkContext";
 
@@ -22,6 +39,7 @@ export const Layout = ({ children }: LayoutProps) => {
   const { network, setNetwork } = useNetwork();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const truncateKey = (key: string | null) => {
     if (!key) return "Connected";
@@ -168,10 +186,173 @@ export const Layout = ({ children }: LayoutProps) => {
             )}
           </nav>
 
-          {/* Mobile Menu Toggle (simplified) */}
-          <Button variant="ghost" size="icon" className="md:hidden">
-            <Menu className="w-5 h-5" />
-          </Button>
+          {/* Mobile Menu */}
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden text-muted-foreground hover:text-foreground"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="w-[300px] sm:w-[400px] border-l border-border/20 bg-[#0a0e13] p-0"
+            >
+              <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
+              <div className="flex flex-col h-full bg-[#0a0e13]">
+                <div className="p-6 border-b border-border/10">
+                  <div className="flex items-center gap-2 mb-6">
+                    <img src="/logo.png" alt="Logo" className="w-8 h-8" />
+                    <span className="text-xl font-bold tracking-wide text-foreground">
+                      ZYPHERSCAN
+                    </span>
+                  </div>
+
+                  {/* Network Selector Mobile */}
+                  <div className="flex bg-[#12171d] rounded-lg p-1 border border-border/20 mb-4">
+                    <button
+                      onClick={() => setNetwork("mainnet")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${
+                        network === "mainnet"
+                          ? "bg-terminal-green/10 text-terminal-green shadow-sm border border-terminal-green/20"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          network === "mainnet"
+                            ? "bg-terminal-green"
+                            : "bg-muted-foreground"
+                        }`}
+                      />
+                      Mainnet
+                    </button>
+                    <button
+                      onClick={() => setNetwork("testnet")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${
+                        network === "testnet"
+                          ? "bg-yellow-500/10 text-yellow-500 shadow-sm border border-yellow-500/20"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          network === "testnet"
+                            ? "bg-yellow-500"
+                            : "bg-muted-foreground"
+                        }`}
+                      />
+                      Testnet
+                    </button>
+                  </div>
+
+                  <SearchBar variant="header" setIsMobileMenuOpen={setIsMobileMenuOpen} />
+                </div>
+
+                <ScrollArea className="flex-1 py-4">
+                  <div className="px-3 space-y-1">
+                    <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Tools
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigate("/mempool");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                    >
+                      <Activity className="w-4 h-4 text-accent" />
+                      Mempool
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate("/network");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                    >
+                      <Settings className="w-4 h-4 text-accent" />
+                      Network Stats
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate("/blocks");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                    >
+                      <Box className="w-4 h-4 text-accent" />
+                      Recent Blocks
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate("/privacy");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                    >
+                      <Shield className="w-4 h-4 text-accent" />
+                      Privacy Stats
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate("/decrypt");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                    >
+                      <FileText className="w-4 h-4 text-accent" />
+                      Decrypt Tool
+                    </button>
+                  </div>
+                </ScrollArea>
+
+                <div className="p-6 border-t border-border/10 bg-[#12171d]/50">
+                  {isConnected ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/5 border border-accent/10">
+                        <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center">
+                          <Wallet className="w-4 h-4 text-accent" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-muted-foreground">
+                            Connected Wallet
+                          </span>
+                          <span className="text-sm font-mono font-medium text-foreground">
+                            {truncateKey(viewingKey)}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          handleDisconnect();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        variant="destructive"
+                        className="w-full justify-start bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Disconnect
+                      </Button>
+                    </div>
+                  ) : (
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+                        <Wallet className="w-4 h-4 mr-2" />
+                        Connect Wallet
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </header>
 
@@ -181,7 +362,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <footer className="border-t border-border bg-card/20">
         <div className="container px-6 py-12">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 justify-center w-full">
               <img src="/logo.png" alt="Logo" className="w-10 h-10" />
               <div>
                 <p className="font-semibold text-lg">Zypherscan</p>
@@ -191,7 +372,7 @@ export const Layout = ({ children }: LayoutProps) => {
               </div>
             </div>
 
-            <div className="flex gap-8 text-sm text-muted-foreground">
+            <div className="flex gap-8 text-sm text-muted-foreground w-full justify-center">
               <Link to="/" className="hover:text-accent transition-colors">
                 Home
               </Link>
@@ -215,7 +396,7 @@ export const Layout = ({ children }: LayoutProps) => {
               </Link>
             </div>
 
-            <div className="text-center md:text-right">
+            <div className="text-center md:text-right w-full">
               <p className="text-sm text-muted-foreground">© 2025 Zypherscan</p>
               <p className="text-xs font-mono text-muted-foreground mt-1 opacity-60">
                 Built with ❤️ by Zypherscan

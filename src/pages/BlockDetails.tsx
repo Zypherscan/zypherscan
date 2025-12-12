@@ -256,6 +256,12 @@ const BlockDetails = () => {
     return `${ago} (${date.toLocaleString()})`;
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+  }, [block]);
+
   const formatHashrate = (difficulty: number) => {
     if (difficulty >= 1e12) return `${(difficulty / 1e12).toFixed(2)} TH/s`;
     if (difficulty >= 1e9) return `${(difficulty / 1e9).toFixed(2)} GH/s`;

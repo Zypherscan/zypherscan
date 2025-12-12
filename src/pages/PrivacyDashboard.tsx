@@ -147,6 +147,12 @@ const PrivacyDashboard = () => {
     }
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+  }, [stats]);
+
   if (loading && !stats) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

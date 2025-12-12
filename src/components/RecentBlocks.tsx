@@ -86,11 +86,15 @@ export const RecentBlocks = () => {
 
       <div className="grid gap-4">
         {blocks.map((block) => (
-          <Link key={block.height} to={`/block/${block.height}`}>
+          <Link
+            key={block.height}
+            to={`/block/${block.height}`}
+            className="w-full"
+          >
             <Card className="card-glow bg-card/50 backdrop-blur-sm p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10 group">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 group-hover:bg-accent/20 transition-colors shrink-0">
+                  <div className="flex flex-col items-center justify-center rounded-lg bg-accent/10 border border-accent/20 group-hover:bg-accent/20 transition-colors shrink-0">
                     <Box className="w-6 h-6 text-accent" />
                   </div>
 
@@ -105,7 +109,7 @@ export const RecentBlocks = () => {
                       </div>
                     </div>
 
-                    <p className="font-mono text-xs text-muted-foreground truncate opacity-70 mb-2">
+                    <p className="font-mono text-xs text-muted-foreground break-all opacity-70 mb-2">
                       {block.hash}
                     </p>
 

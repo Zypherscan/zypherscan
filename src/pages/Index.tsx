@@ -6,10 +6,17 @@ import { MarketStatsBanner } from "@/components/MarketStatsBanner";
 import { Button } from "@/components/ui/button";
 import { Shield, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 const Index = () => {
   const { isConnected } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">

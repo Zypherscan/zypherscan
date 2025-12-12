@@ -61,12 +61,12 @@ const RecentBlocks = () => {
             <table className="w-full text-sm text-left">
               <thead className="text-muted-foreground border-b border-border bg-accent/5">
                 <tr>
-                  <th className="py-3 pl-6">Height</th>
-                  <th className="py-3">Hash</th>
-                  <th className="py-3">Time</th>
-                  <th className="py-3">TXs</th>
-                  <th className="py-3">Size</th>
-                  <th className="py-3 pr-6"></th>
+                  <th className="py-3 pl-6 pr-2">Height</th>
+                  <th className="py-3 px-2">Hash</th>
+                  <th className="py-3 px-2">Time</th>
+                  <th className="py-3 px-2">TXs</th>
+                  <th className="py-3 px-2">Size</th>
+                  <th className="py-3 pr-6 pl-3 hidden md:block"></th>
                 </tr>
               </thead>
               <tbody className="font-mono">
@@ -75,7 +75,7 @@ const RecentBlocks = () => {
                     key={block.hash}
                     className="border-b border-border/50 last:border-0 hover:bg-accent/5 transition-colors"
                   >
-                    <td className="py-3 pl-6 font-bold text-accent">
+                    <td className="py-3 pl-6 pr-2 font-bold text-accent">
                       <Link
                         to={`/block/${block.height}`}
                         className="hover:underline"
@@ -83,17 +83,17 @@ const RecentBlocks = () => {
                         {block.height}
                       </Link>
                     </td>
-                    <td className="py-3 text-muted-foreground">
+                    <td className="py-3 px-2 text-muted-foreground">
                       {block.hash.substring(0, 16)}...
                     </td>
-                    <td className="py-3 text-muted-foreground">
+                    <td className="py-3 px-2 text-muted-foreground whitespace-nowrap">
                       {new Date(block.timestamp).toLocaleString()}
                     </td>
-                    <td className="py-3">{block.tx_count}</td>
-                    <td className="py-3">
+                    <td className="py-3 px-2">{block.tx_count}</td>
+                    <td className="py-3 px-2 whitespace-nowrap">
                       {(block.size / 1024).toFixed(2)} KB
                     </td>
-                    <td className="py-3 pr-6 text-right">
+                    <td className="py-3 pl-2 pr-6 text-right hidden md:block">
                       <Link to={`/block/${block.height}`}>
                         <ArrowRight className="w-4 h-4 text-muted-foreground hover:text-accent inline-block" />
                       </Link>
