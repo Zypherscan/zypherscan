@@ -38,12 +38,19 @@ COPY . .
 RUN pnpm run build
 
 # Stage 3: Production image
-FROM node:20-slim
+FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
+# Install Node.js and pnpm
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g pnpm \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files and install production dependencies
 COPY package.json pnpm-lock.yaml ./
