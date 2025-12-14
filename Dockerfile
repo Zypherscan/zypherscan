@@ -1,6 +1,6 @@
 # Multi-stage Dockerfile for ZypherScan
 # Stage 1: Build Rust scanner
-FROM rust:1.75-slim as rust-builder
+FROM rust:latest as rust-builder
 
 # Install dependencies for Rust build
 RUN apt-get update && apt-get install -y \
