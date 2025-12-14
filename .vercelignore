@@ -1,12 +1,17 @@
-# Ignore Rust directories and files
+# Ignore Vercel Rust function (not supported by Vercel)
 api/Cargo.toml
 api/scan.rs
 api/target/
-zypherscan-decrypt/
-*.rs
-Cargo.toml
-Cargo.lock
-target/
+
+# Ignore WASM source code (but keep built .wasm and .js files)
+zypherscan-decrypt/target/
+zypherscan-decrypt/Cargo.lock
+
+# DO NOT ignore these - they're needed for production:
+# !lib/wasm/*.wasm
+# !lib/wasm/*.js
+# !public/wasm/*.wasm
+# !public/wasm/*.js
 
 # Ignore development files
 node_modules/
