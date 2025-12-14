@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /build
 
 # Copy Rust project files
-COPY zypherscan-decrypt/Cargo.toml zypherscan-decrypt/Cargo.lock ./
+COPY zypherscan-decrypt/Cargo.toml ./
 COPY zypherscan-decrypt/src ./src
 
 # Build Rust binary in release mode
