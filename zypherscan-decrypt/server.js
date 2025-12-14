@@ -158,25 +158,63 @@ app.all('/zebra/*', async (req, res) => {
  * Serve static files from Vite build (for production)
  */
 const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
 
-/**
- * Catch-all route to serve React app (SPA routing)
- */
-app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-});
+// Check if dist folder exists
+import { existsSync } from 'fs';
+if (existsSync(distPath)) {
+    console.log(`✅ Serving static files from: ${distPath}`);
+    app.use(express.static(distPath));
+    
+    /**
+     * Catch-all route to serve React app (SPA routing)
+     */
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+} else {
+    console.warn(`⚠️  Warning: dist folder not found at ${distPath}`);
+    console.warn(`   Frontend will not be served. API endpoints will still work.`);
+    
+    // Fallback route
+    app.get('*', (req, res) => {
+        res.status(503).json({
+            error: 'Frontend not built',
+            message: 'The frontend has not been built yet. API endpoints are still available.',
+            apiEndpoints: {
+                scan: '/api/scan',
+                health: '/api/health'
+            }
+        });
+    });
+}
 
 /**
  * Start server
  */
-app.listen(PORT, () => {
-    console.log(`🚀 ZypherScan Server Running`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n🚀 ZypherScan Server Running`);
     console.log(`   Port: ${PORT}`);
-    console.log(`   Frontend: http://localhost:${PORT}`);
-    console.log(`   Scanner API: http://localhost:${PORT}/scan`);
-    console.log(`   Health Check: http://localhost:${PORT}/health`);
+    console.log(`   Host: 0.0.0.0 (listening on all interfaces)`);
+    console.log(`   Scanner API: http://localhost:${PORT}/api/scan`);
+    console.log(`   Health Check: http://localhost:${PORT}/api/health`);
     console.log(`   Binary: ${BINARY_PATH}`);
-    console.log(`\nMake sure to build the binary using 'cargo build --release' first.`);
+    console.log(`   Binary exists: ${existsSync(BINARY_PATH)}`);
+    console.log(`   Dist folder: ${distPath}`);
+    console.log(`   Dist exists: ${existsSync(distPath)}`);
+    console.log(`\n✅ Server ready to accept connections\n`);
 });
 
+// Handle server errors
+server.on('error', (error) => {
+    console.error('❌ Server error:', error);
+    process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('\n📛 SIGTERM received, shutting down gracefully...');
+    server.close(() => {
+        console.log('✅ Server closed');
+        process.exit(0);
+    });
+});
