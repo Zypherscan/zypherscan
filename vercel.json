@@ -1,4 +1,9 @@
 {
+  "buildCommand": "pnpm run build",
+  "framework": "vite",
+  "installCommand": "pnpm install",
+  "outputDirectory": "dist",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./",
   "rewrites": [
     {
       "source": "/api-testnet/:path*",

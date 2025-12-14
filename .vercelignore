@@ -1,0 +1,15 @@
+# Ignore Rust directories and files
+api/Cargo.toml
+api/scan.rs
+api/target/
+zypherscan-decrypt/
+*.rs
+Cargo.toml
+Cargo.lock
+target/
+
+# Ignore development files
+node_modules/
+.env.local
+.env.development
+.DS_Store
