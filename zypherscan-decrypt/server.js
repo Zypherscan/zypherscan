@@ -69,6 +69,25 @@ app.get('/api/health', async (req, res) => {
     });
 });
 
+// Debug endpoint to check configuration
+app.get('/api/debug', (req, res) => {
+    res.json({
+        environment: {
+            NODE_ENV: process.env.NODE_ENV,
+            PORT: process.env.PORT,
+            MAINNET_API: process.env.VITE_CIPHERSCAN_MAINNET_API_URL,
+            TESTNET_API: process.env.VITE_CIPHERSCAN_TESTNET_API_URL,
+            ZEBRA_RPC: process.env.VITE_ZEBRA_RPC_URL,
+        },
+        paths: {
+            binary: BINARY_PATH,
+            binaryExists: existsSync(BINARY_PATH),
+            dist: distPath,
+            distExists: existsSync(path.join(__dirname, '..', 'dist'))
+        }
+    });
+});
+
 // 2. Scanner API endpoints (must come before /api/* catch-all)
 app.post('/scan', scanHandler);
 app.post('/api/scan', scanHandler);
