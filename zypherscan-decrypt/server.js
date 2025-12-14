@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
+import { existsSync } from 'fs';
 import { runZypherScanner } from './scanner_client.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,9 +18,12 @@ app.use(express.json());
 // Path to the compiled Rust binary
 const BINARY_PATH = path.join(__dirname, 'target', 'release', 'zypherscan-decrypt');
 
+console.log('🔧 Initializing ZypherScan Server...');
+console.log(`   Binary path: ${BINARY_PATH}`);
+console.log(`   Binary exists: ${existsSync(BINARY_PATH)}`);
+
 /**
- * Scanner API endpoints
- * POST /scan and POST /api/scan (both work)
+ * Scanner handler
  */
 const scanHandler = async (req, res) => {
     const { uvk, birthday, action = 'all', txid = null } = req.body;
@@ -28,23 +32,23 @@ const scanHandler = async (req, res) => {
         return res.status(400).json({ error: 'Missing UVK or Birthday' });
     }
 
-    console.log(`[Server] Received scan request: Action=${action}, Birthday=${birthday}`);
+    console.log(`[Scanner] Request: Action=${action}, Birthday=${birthday}`);
     
     try {
         const result = await runZypherScanner(uvk, birthday, action, txid);
         res.json(result);
     } catch (err) {
-        console.error('[Server] Error processing request:', err);
+        console.error('[Scanner] Error:', err);
         res.status(500).json({ error: err.message });
     }
 };
 
-app.post('/scan', scanHandler);
-app.post('/api/scan', scanHandler);
-
 /**
- * Health check endpoint
+ * ROUTE DEFINITIONS
+ * Order is critical! More specific routes must come before wildcards
  */
+
+// 1. Health check endpoints
 app.get('/health', async (req, res) => {
     const fs = await import('fs');
     res.json({
@@ -54,6 +58,7 @@ app.get('/health', async (req, res) => {
         binaryExists: fs.existsSync(BINARY_PATH)
     });
 });
+
 app.get('/api/health', async (req, res) => {
     const fs = await import('fs');
     res.json({
@@ -64,19 +69,15 @@ app.get('/api/health', async (req, res) => {
     });
 });
 
-/**
- * API Proxies (for production deployment)
- * Order matters! More specific routes must come first
- */
-
-// Scanner API - must come before /api/* catch-all
+// 2. Scanner API endpoints (must come before /api/* catch-all)
+app.post('/scan', scanHandler);
 app.post('/api/scan', scanHandler);
 
-// Testnet proxy - /api-testnet/*
+// 3. Testnet proxy
 app.all('/api-testnet/*', async (req, res) => {
     const baseUrl = process.env.VITE_CIPHERSCAN_TESTNET_API_URL || 'https://testnet.cipherscan.io';
     const pathWithoutPrefix = req.path.replace('/api-testnet', '');
-    const targetUrl = `${baseUrl}/api${pathWithoutPrefix}${req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''}`;
+    const targetUrl = `${baseUrl}${pathWithoutPrefix}${req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''}`;
     
     console.log(`[Testnet Proxy] ${req.method} ${req.path} -> ${targetUrl}`);
     
@@ -94,17 +95,16 @@ app.all('/api-testnet/*', async (req, res) => {
         const data = await response.text();
         res.status(response.status).send(data);
     } catch (error) {
-        console.error('Testnet Proxy Error:', error);
+        console.error('[Testnet Proxy] Error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Mainnet proxy - /api/* (catch-all for Cipherscan API)
-// This must come after /api/scan to avoid conflicts
+// 4. Mainnet proxy (catch-all for /api/*)
 app.all('/api/*', async (req, res) => {
     const baseUrl = process.env.VITE_CIPHERSCAN_MAINNET_API_URL || 'https://api.cipherscan.io';
     const pathWithoutPrefix = req.path.replace('/api', '');
-    const targetUrl = `${baseUrl}/api${pathWithoutPrefix}${req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''}`;
+    const targetUrl = `${baseUrl}${pathWithoutPrefix}${req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : ''}`;
     
     console.log(`[Mainnet Proxy] ${req.method} ${req.path} -> ${targetUrl}`);
     
@@ -122,12 +122,12 @@ app.all('/api/*', async (req, res) => {
         const data = await response.text();
         res.status(response.status).send(data);
     } catch (error) {
-        console.error('Mainnet Proxy Error:', error);
+        console.error('[Mainnet Proxy] Error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Zebra proxy - /zebra/*
+// 5. Zebra proxy
 app.all('/zebra/*', async (req, res) => {
     const baseUrl = process.env.VITE_ZEBRA_RPC_URL || 'https://mainnet.lightwalletd.com:9067';
     const pathWithoutPrefix = req.path.replace('/zebra', '');
@@ -149,44 +149,36 @@ app.all('/zebra/*', async (req, res) => {
         const data = await response.text();
         res.status(response.status).send(data);
     } catch (error) {
-        console.error('Zebra Proxy Error:', error);
+        console.error('[Zebra Proxy] Error:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-/**
- * Serve static files from Vite build (for production)
- */
+// 6. Serve static files from Vite build
 const distPath = path.join(__dirname, '..', 'dist');
 
-// Check if dist folder exists
-import { existsSync } from 'fs';
 if (existsSync(distPath)) {
     console.log(`✅ Serving static files from: ${distPath}`);
     app.use(express.static(distPath));
-    
-    /**
-     * Catch-all route to serve React app (SPA routing)
-     */
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(distPath, 'index.html'));
-    });
 } else {
     console.warn(`⚠️  Warning: dist folder not found at ${distPath}`);
-    console.warn(`   Frontend will not be served. API endpoints will still work.`);
-    
-    // Fallback route
-    app.get('*', (req, res) => {
+}
+
+// 7. Catch-all route (MUST BE LAST!)
+app.get('*', (req, res) => {
+    if (existsSync(distPath)) {
+        res.sendFile(path.join(distPath, 'index.html'));
+    } else {
         res.status(503).json({
             error: 'Frontend not built',
             message: 'The frontend has not been built yet. API endpoints are still available.',
             apiEndpoints: {
-                scan: '/api/scan',
-                health: '/api/health'
+                health: '/api/health',
+                scan: '/api/scan'
             }
         });
-    });
-}
+    }
+});
 
 /**
  * Start server
@@ -194,27 +186,36 @@ if (existsSync(distPath)) {
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 ZypherScan Server Running`);
     console.log(`   Port: ${PORT}`);
-    console.log(`   Host: 0.0.0.0 (listening on all interfaces)`);
-    console.log(`   Scanner API: http://localhost:${PORT}/api/scan`);
-    console.log(`   Health Check: http://localhost:${PORT}/api/health`);
+    console.log(`   Host: 0.0.0.0`);
+    console.log(`   Scanner API: /api/scan`);
+    console.log(`   Health Check: /api/health`);
     console.log(`   Binary: ${BINARY_PATH}`);
     console.log(`   Binary exists: ${existsSync(BINARY_PATH)}`);
     console.log(`   Dist folder: ${distPath}`);
     console.log(`   Dist exists: ${existsSync(distPath)}`);
-    console.log(`\n✅ Server ready to accept connections\n`);
+    console.log(`\n✅ Server ready!\n`);
 });
 
-// Handle server errors
+// Error handling
 server.on('error', (error) => {
     console.error('❌ Server error:', error);
     process.exit(1);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
-    console.log('\n📛 SIGTERM received, shutting down gracefully...');
+    console.log('\n📛 SIGTERM received, shutting down...');
     server.close(() => {
         console.log('✅ Server closed');
         process.exit(0);
     });
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught exception:', error);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
+    process.exit(1);
 });
