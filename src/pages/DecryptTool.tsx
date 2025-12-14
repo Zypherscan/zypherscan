@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useWalletData } from "@/hooks/useWalletData";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
-import { decryptMemo } from "@/lib/wasm-loader";
-import { supabase } from "@/integrations/supabase/client";
+// import { decryptMemo } from "@/lib/wasm-loader"; // Removed WASM
+// import { supabase } from "@/integrations/supabase/client"; // Removed Supabase
+import { scanWallet } from "@/lib/scanner-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -13,8 +15,8 @@ import { useToast } from "@/components/ui/use-toast";
 
 const DecryptTool = () => {
   const navigate = useNavigate();
-  const { viewingKey, isConnected } = useAuth();
-  const { searchBlockchain } = useZcashAPI();
+  const { viewingKey, isConnected, getBirthdayHeight } = useAuth();
+  const { transactions } = useWalletData(); // Uses context now
   const { toast } = useToast();
 
   const [txid, setTxid] = useState("");
@@ -39,136 +41,75 @@ const DecryptTool = () => {
     setError(null);
     setResult(null);
 
-    try {
-      const response = await supabase.functions.invoke("zcash-api", {
-        body: { action: "getRawTransaction", txid },
-      });
-
-      if (response.error) {
-        throw new Error(
-          "Failed to fetch transaction. This requires a working Zcash RPC node.\n\n" +
-            "Please ensure:\n" +
-            "1. The zcash-api Supabase function is deployed\n" +
-            "2. Your Zebra RPC node is running and accessible\n" +
-            "3. The transaction ID is correct"
+    // OPTIMIZATION: Check if we already have this transaction in our history
+    // This assumes the user has already synced on the Dashboard.
+    if (transactions.length > 0) {
+      const found = transactions.find((t) => t.txid === txid);
+      if (found) {
+        console.log(
+          "[DecryptTool] Found transaction in history cache! Skipping scan."
         );
-      }
-
-      if (!response.data?.hex) {
-        console.error("No hex in response:", response.data);
-        throw new Error(
-          "Transaction hex not available. The transaction might not exist or the RPC node is not responding."
-        );
-      }
-
-      const txHex = response.data.hex;
-
-      // Analyze transaction structure
-      try {
-        const txAnalysis = await supabase.functions.invoke("zcash-api", {
-          body: { action: "getTransaction", txid },
+        setResult({
+          memo: found.memo || "No memo found.",
+          amount: Math.abs(found.amount),
         });
-
-        if (txAnalysis.data?.transaction) {
-          const tx = txAnalysis.data.transaction;
-
-          // Provide helpful feedback
-          if (tx.version < 5) {
-            setError(
-              "⚠️ This is a legacy transaction (version " +
-                tx.version +
-                ").\n\n" +
-                "Only Orchard transactions (version 5) are supported for decryption.\n" +
-                "This transaction uses Sapling or older shielded pools."
-            );
-            return;
-          }
-
-          if (
-            !tx.orchard ||
-            !tx.orchard.actions ||
-            tx.orchard.actions.length === 0
-          ) {
-            setError(
-              "⚠️ This is a legacy transaction (version " +
-                tx.version +
-                ").\n\n" +
-                "Only Orchard transactions (version 5) are supported for decryption.\n" +
-                "This transaction uses Sapling or older shielded pools."
-            );
-            return;
-          }
-
-          if (
-            !tx.orchard ||
-            !tx.orchard.actions ||
-            tx.orchard.actions.length === 0
-          ) {
-            setError(
-              "⚠️ This transaction has no Orchard actions.\n\n" +
-                "Current WASM only supports Orchard memo decryption.\n" +
-                "Sapling outputs: " +
-                (tx.vShieldedOutput?.length || 0) +
-                "\n" +
-                "Orchard actions: 0\n\n" +
-                "Note: Sapling decryption support is coming soon!"
-            );
-            return;
-          }
-        }
-      } catch (analysisError) {
-        console.warn("Could not analyze transaction:", analysisError);
-        // Continue with decryption attempt anyway
+        toast({
+          title: "Success",
+          description: "Transaction decrypted.",
+        });
+        setLoading(false);
+        return;
       }
+    }
 
-      try {
-        const decrypted = await decryptMemo(txHex, viewingKey);
+    // If not found, fall back to scanning specifically for this TXID
+    try {
+      const birthday = getBirthdayHeight();
+      const response = await scanWallet(viewingKey, birthday, "memo", txid);
 
-        if (decrypted && (decrypted.memo || decrypted.amount > 0)) {
+      if (response.raw) {
+        // Parse raw output for "Memo <n>: <content>"
+        const raw = response.raw;
+        if (raw.includes("Transaction not found")) {
+          throw new Error(
+            "Transaction not found in history. Ensure the wallet is synced."
+          );
+        }
+
+        // ... rest of parsing logic ...
+        if (raw.includes("No memos found")) {
           setResult({
-            memo: decrypted.memo || "No memo",
-            amount: decrypted.amount,
+            memo: "No memos found for this transaction.",
+            amount: 0,
+          });
+          return;
+        }
+
+        const lines = raw.split("\n");
+        const memoLines = lines.filter((l) => l.trim().startsWith("Memo"));
+        const memoText = memoLines
+          .map((l) => l.replace(/^Memo \d+: /, ""))
+          .join("\n\n");
+
+        if (memoText) {
+          setResult({
+            memo: memoText,
+            amount: 0,
           });
           toast({
             title: "Success!",
             description: "Transaction decrypted successfully.",
           });
         } else {
-          setError(
-            "Could not decrypt this transaction with your viewing key.\n\n" +
-              "This transaction may:\n" +
-              "• Not be sent to your address\n" +
-              "• Not be an Orchard transaction\n" +
-              "• Be encrypted for a different viewing key\n\n" +
-              "💡 Tip: Make sure you're using the viewing key for the address that RECEIVED this transaction."
-          );
+          throw new Error("Could not parse memos from output.");
         }
-      } catch (decryptError) {
-        const errorMsg =
-          decryptError instanceof Error
-            ? decryptError.message
-            : String(decryptError);
-
-        if (
-          errorMsg.includes("No memo found") ||
-          errorMsg.includes("viewing key doesn't match")
-        ) {
-          setError(
-            "This transaction is not encrypted for your viewing key.\n\n" +
-              "Possible reasons:\n" +
-              "• The transaction was sent to a different address\n" +
-              "• You're using the wrong viewing key\n" +
-              "• The transaction only has transparent or Sapling outputs (not Orchard)\n\n" +
-              "💡 Tip: Verify you're using the viewing key for the RECEIVING address, not the sending address."
-          );
-        } else {
-          setError(`Decryption error: ${errorMsg}`);
-        }
+      } else {
+        throw new Error("No response from scanner.");
       }
     } catch (err) {
       console.error("Decryption failed:", err);
       const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch transaction";
+        err instanceof Error ? err.message : "Failed to decrypt transaction";
       setError(errorMessage);
     } finally {
       setLoading(false);

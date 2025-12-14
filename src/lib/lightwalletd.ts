@@ -5,8 +5,6 @@
  * This acts as a proxy to the actual lightwalletd (or Cipherscan API).
  */
 
-import { supabase } from "./supabase";
-
 export interface CompactBlock {
   height: string; // API returns string height
   hash: string;
@@ -57,12 +55,29 @@ class LightwalletdService {
    */
   async getLatestBlockHeight(): Promise<number> {
     try {
-      const { data, error } = await supabase.functions.invoke("zcash-api", {
-        body: { action: "getBlockchainInfo" },
+      // Use local proxy defined in vite.config.ts to avoid CORS
+      const rpcUrl = "/zebra";
+
+      const response = await fetch(rpcUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "getblockchaininfo",
+          params: [],
+          id: 1,
+        }),
       });
 
-      if (error) throw error;
-      return data.info?.blocks || 0;
+      if (!response.ok) {
+        // fallback or throw?
+        throw new Error(response.statusText);
+      }
+
+      const json = await response.json();
+      if (json.error) throw new Error(json.error.message);
+
+      return json.result?.blocks || 0;
     } catch (error) {
       console.error("Failed to get latest block height:", error);
       return 0;
@@ -86,165 +101,29 @@ class LightwalletdService {
 
   /**
    * Start syncing the blockchain from a given height
+   * @deprecated Use scanWallet from scanner-api instead
    */
   async startSync(
     startHeight: number,
     viewingKey: string,
     onTransaction: (tx: any) => void
   ): Promise<void> {
-    if (this.syncInProgress) {
-      console.warn("Sync already in progress");
-      return;
-    }
-
-    this.syncInProgress = true;
-    this.abortController = new AbortController();
-
-    const targetHeight = await this.getLatestBlockHeight();
-
-    if (targetHeight <= 0) {
-      console.error("Invalid target height:", targetHeight);
-      this.syncInProgress = false;
-      return;
-    }
-
-    // Sanity check for startHeight
-    if (startHeight < 0) {
-      startHeight = Math.max(0, targetHeight - 10000);
-    }
-
-    const startTime = Date.now();
-    let currentHeight = startHeight;
-    let blocksProcessed = 0;
-    let matchesFound = 0;
-
-    // Dynamically import WASM functions to avoid loading if not needed
-    const { decryptTransactions } = await import("./zcash-crypto");
-
-    try {
-      this.notifyProgress({
-        currentHeight,
-        targetHeight,
-        percentage: 0,
-        blocksPerSecond: 0,
-        estimatedTimeRemaining: 0,
-        status: "syncing",
-        matchesFound: 0,
-      });
-
-      const BATCH_SIZE = 5000; // Increased batch size to reduce API calls
-
-      while (
-        currentHeight < targetHeight &&
-        !this.abortController.signal.aborted
-      ) {
-        const batchEnd = Math.min(currentHeight + BATCH_SIZE, targetHeight);
-
-        // Fetch compact blocks via Supabase Proxy
-        const { data, error } = await supabase.functions.invoke("zcash-api", {
-          body: {
-            action: "scan",
-            startHeight: currentHeight,
-            endHeight: batchEnd,
-          },
-        });
-
-        if (error) throw error;
-        if (!data.success && data.error) throw new Error(data.error);
-
-        const compactBlocks = (data.blocks || []).map((b: any) => ({
-          ...b,
-          height: parseInt(b.height),
-          vtx: b.vtx.map((tx: any) => ({
-            ...tx,
-            actions: tx.actions || [],
-            outputs: tx.outputs || [],
-          })),
-        }));
-
-        // Decrypt transactions in this batch
-        if (compactBlocks.length > 0) {
-          const decryptedTxs = await decryptTransactions(
-            viewingKey,
-            compactBlocks
-          );
-
-          if (decryptedTxs.length > 0) {
-            matchesFound += decryptedTxs.length;
-            decryptedTxs.forEach((tx) => onTransaction(tx));
-          }
-        }
-
-        blocksProcessed += batchEnd - currentHeight;
-        currentHeight = batchEnd;
-
-        const elapsed = (Date.now() - startTime) / 1000;
-        const blocksPerSecond = blocksProcessed / (elapsed || 1);
-        const remainingBlocks = targetHeight - currentHeight;
-        const estimatedTimeRemaining = remainingBlocks / blocksPerSecond;
-
-        const percentage =
-          ((currentHeight - startHeight) / (targetHeight - startHeight)) * 100;
-
-        this.notifyProgress({
-          currentHeight,
-          targetHeight,
-          percentage,
-          blocksPerSecond,
-          estimatedTimeRemaining,
-          status: "syncing",
-          matchesFound,
-        });
-
-        // Add delay to avoid rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-
-      this.notifyProgress({
-        currentHeight: targetHeight,
-        targetHeight,
-        percentage: 100,
-        blocksPerSecond: 0,
-        estimatedTimeRemaining: 0,
-        status: "complete",
-        matchesFound,
-      });
-    } catch (error) {
-      console.error("Sync error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      this.notifyProgress({
-        currentHeight,
-        targetHeight,
-        percentage: (currentHeight / targetHeight) * 100,
-        blocksPerSecond: 0,
-        estimatedTimeRemaining: 0,
-        status: "error",
-        error: errorMessage,
-        matchesFound,
-      });
-      throw error;
-    } finally {
-      this.syncInProgress = false;
-      this.abortController = null;
-    }
+    console.warn(
+      "lightwalletd.startSync is deprecated. Use scanner-api instead."
+    );
+    return Promise.resolve();
   }
 
   /**
    * Stop ongoing sync
    */
-  stopSync(): void {
-    if (this.abortController) {
-      this.abortController.abort();
-    }
-    this.syncInProgress = false;
-  }
+  stopSync(): void {}
 
   /**
    * Check if sync is in progress
    */
   isSyncing(): boolean {
-    return this.syncInProgress;
+    return false;
   }
 }
 

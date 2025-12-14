@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { decryptMemo, DecryptedOutput } from "@/lib/wasm-loader";
+// import { supabase } from "@/integrations/supabase/client";
+// import { decryptMemo, DecryptedOutput } from "@/lib/wasm-loader";
+import { DecryptedOutput } from "@/lib/wasm-loader"; // Keep type if needed, or define locally
+import { scanWallet } from "@/lib/scanner-api";
 import { useAuth } from "@/hooks/useAuth";
+import { useWalletData } from "@/hooks/useWalletData";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -98,6 +101,7 @@ interface TransactionDetails {
 }
 
 const TransactionDetails = () => {
+  // ...
   const { txid } = useParams<{ txid: string }>();
   const navigate = useNavigate();
   const {
@@ -105,8 +109,11 @@ const TransactionDetails = () => {
     viewingKey,
     loading: authLoading,
     disconnect,
+    getBirthdayHeight,
   } = useAuth();
+
   const { searchBlockchain } = useZcashAPI();
+  const { transactions } = useWalletData(); // Consume context
 
   const [transaction, setTransaction] = useState<TransactionDetails | null>(
     null
@@ -177,31 +184,58 @@ const TransactionDetails = () => {
   const executeDecryption = async (keyToUse: string) => {
     setIsDecrypting(true);
     try {
-      // 1. Fetch Raw Transaction Hex (via Supabase Proxy to Zebra/Lightwalletd)
-      const { data: response, error: apiError } =
-        await supabase.functions.invoke("zcash-api", {
-          body: { action: "getRawTransaction", txid },
-        });
-
-      if (apiError || !response || !response.hex) {
-        throw new Error("Failed to fetch raw transaction hex");
+      // OPTIMIZATION: Check if we already have this transaction in our history
+      // This logic checks the globally loaded transactions first
+      if (transactions.length > 0) {
+        const found = transactions.find((t) => t.txid === txid);
+        if (found) {
+          console.log(
+            "[TransactionDetails] Found transaction in history cache! Skipping scan."
+          );
+          setDecryptedData({
+            amount: Math.abs(found.amount),
+            memo: found.memo || "",
+          } as any);
+          toast.success("Transaction decrypted successfully!");
+          setShowKeyDialog(false);
+          setIsDecrypting(false);
+          return;
+        }
       }
 
-      // 2. Decrypt using WASM
-      const result = await decryptMemo(response.hex, keyToUse);
+      const birthday = getBirthdayHeight();
+      // Use 'history' action to get both amount and memos
+      const response = await scanWallet(keyToUse, birthday, "history");
 
-      if (result) {
-        setDecryptedData(result);
-        toast.success("Transaction decrypted successfully!");
-        // Optional: Save connection if desired, but user just asked to decrypt
-        // localStorage.setItem("zcash_viewing_key", keyToUse);
-        // localStorage.setItem("zcash_connected", "true");
+      if (response.history) {
+        const tx = response.history.find((t) => t.txid === txid);
+        if (tx) {
+          setDecryptedData({
+            amount: tx.value / 100000000,
+            memo: tx.memos.join("\n") || "",
+          } as any);
+          toast.success("Transaction decrypted successfully!");
+        } else {
+          throw new Error(
+            "Transaction not found in history. Wallet might not be fully synced."
+          );
+        }
+      } else {
+        throw new Error("Scanner did not return history.");
       }
     } catch (err) {
       console.error("Decryption failed:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to decrypt transaction"
-      );
+      // Fallback or specific error handling
+      if (
+        err instanceof Error &&
+        err.message.includes("Scanner Server is not running")
+      ) {
+        toast.error(err.message);
+      } else {
+        toast.error(
+          "Failed to decrypt transaction. Ensure local scanner is running."
+        );
+      }
     } finally {
       setIsDecrypting(false);
       setShowKeyDialog(false);
@@ -337,12 +371,11 @@ const TransactionDetails = () => {
     : transaction?.height || transaction?.blockheight;
   const txType = transaction ? getTransactionType(transaction) : "mixed";
 
-    useEffect(() => {
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-      }, 100);
-    }, [transaction]);
-
+  useEffect(() => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+  }, [transaction]);
 
   if (authLoading) {
     return (

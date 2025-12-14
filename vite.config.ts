@@ -2,6 +2,9 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
+// @ts-ignore
+import { runZypherScanner } from "./zypherscan-decrypt/scanner_client.js";
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -47,7 +50,65 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    plugins: [react()],
+    plugins: [
+      react(),
+      {
+        name: "zypher-scanner-middleware",
+        configureServer(server) {
+          server.middlewares.use(async (req, res, next) => {
+            if (req.method === "POST" && req.url === "/scan") {
+              let body = "";
+              req.on("data", (chunk) => {
+                body += chunk.toString();
+              });
+
+              req.on("end", async () => {
+                try {
+                  const params = JSON.parse(body);
+                  const { uvk, birthday, action = "all", txid = null } = params;
+
+                  if (!uvk || !birthday) {
+                    res.statusCode = 400;
+                    res.setHeader("Content-Type", "application/json");
+                    res.end(
+                      JSON.stringify({ error: "Missing UVK or Birthday" })
+                    );
+                    return;
+                  }
+
+                  console.log(
+                    `[ViteMiddleware] Received scan request: Action=${action}, Birthday=${birthday}`
+                  );
+
+                  // Execute scanner
+                  const result = await runZypherScanner(
+                    uvk,
+                    birthday,
+                    action,
+                    txid
+                  );
+
+                  res.statusCode = 200;
+                  res.setHeader("Content-Type", "application/json");
+                  res.end(JSON.stringify(result));
+                } catch (err) {
+                  console.error(
+                    "[ViteMiddleware] Error processing request:",
+                    err
+                  );
+                  res.statusCode = 500;
+                  res.setHeader("Content-Type", "application/json");
+                  // @ts-ignore
+                  res.end(JSON.stringify({ error: err.message }));
+                }
+              });
+              return;
+            }
+            next();
+          });
+        },
+      },
+    ],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

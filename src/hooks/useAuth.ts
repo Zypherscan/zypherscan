@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface WalletState {
   isConnected: boolean;
@@ -24,23 +24,23 @@ export const useAuth = () => {
     setLoading(false);
   }, []);
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     localStorage.removeItem("zcash_connected");
     localStorage.removeItem("zcash_viewing_key");
     setWallet({
       isConnected: false,
       viewingKey: null,
     });
-  };
+  }, []);
 
-  const getViewingKey = () => {
+  const getViewingKey = useCallback(() => {
     return localStorage.getItem("zcash_viewing_key");
-  };
+  }, []);
 
-  const getBirthdayHeight = () => {
+  const getBirthdayHeight = useCallback(() => {
     const height = localStorage.getItem("zcash_birthday_height");
     return height ? parseInt(height) : null;
-  };
+  }, []);
 
   return {
     isConnected: wallet.isConnected,

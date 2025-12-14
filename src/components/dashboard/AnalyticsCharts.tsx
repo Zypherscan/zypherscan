@@ -46,8 +46,8 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-xl">
-          <p className="font-medium mb-2">{label}</p>
+        <div className="bg-[#1a1f2e] border border-accent/20 rounded-lg p-3 shadow-xl">
+          <p className="font-medium mb-2 text-foreground">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {entry.value.toFixed(4)} ZEC
@@ -82,7 +82,45 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
           <TabsContent value="volume" className="mt-0">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient
+                      id="incomingGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor="hsl(var(--terminal-green))"
+                        stopOpacity={0.4}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="hsl(var(--terminal-green))"
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                    <linearGradient
+                      id="outgoingGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor="hsl(0, 72%, 51%)"
+                        stopOpacity={0.4}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="hsl(0, 72%, 51%)"
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="hsl(var(--border))"
@@ -104,23 +142,25 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
                     tickLine={{ stroke: "hsl(var(--border))" }}
                     tickFormatter={(value) => `${value.toFixed(1)}`}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip />} cursor={false} />
                   <Legend />
-                  <Bar
+                  <Area
+                    type="monotone"
                     dataKey="incoming"
                     name="Incoming"
-                    fill="hsl(var(--terminal-green))"
-                    radius={[4, 4, 0, 0]}
-                    opacity={0.8}
+                    stroke="hsl(var(--terminal-green))"
+                    strokeWidth={2}
+                    fill="url(#incomingGradient)"
                   />
-                  <Bar
+                  <Area
+                    type="monotone"
                     dataKey="outgoing"
                     name="Outgoing"
-                    fill="hsl(0, 72%, 51%)"
-                    radius={[4, 4, 0, 0]}
-                    opacity={0.8}
+                    stroke="hsl(0, 72%, 51%)"
+                    strokeWidth={2}
+                    fill="url(#outgoingGradient)"
                   />
-                </BarChart>
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </TabsContent>
@@ -170,7 +210,7 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
                     tickLine={{ stroke: "hsl(var(--border))" }}
                     tickFormatter={(value) => `${value.toFixed(2)}`}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip />} cursor={false} />
                   <Area
                     type="monotone"
                     dataKey="net"

@@ -5,20 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Shield,
-  ArrowLeft,
-  Upload,
-  QrCode,
-  Key,
-  Eye,
-  EyeOff,
-  Sprout,
-} from "lucide-react";
+import { Shield, ArrowLeft, Upload, Key, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
-import { Scanner } from "@yudiel/react-qr-scanner";
-import { SeedPhraseConnect } from "@/components/SeedPhraseConnect";
 
 // Zcash unified viewing key validation (starts with 'uview' for mainnet)
 const viewingKeySchema = z
@@ -34,7 +23,6 @@ const Auth = () => {
   const [birthdayHeight, setBirthdayHeight] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [scannerActive, setScannerActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -119,11 +107,6 @@ const Auth = () => {
     }
   };
 
-  const handleQRScan = (result: string) => {
-    setScannerActive(false);
-    validateAndConnect(result);
-  };
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md space-y-6">
@@ -139,7 +122,9 @@ const Auth = () => {
         <Card className="card-glow bg-card/50 backdrop-blur-sm p-8 border-accent/10">
           <div className="flex flex-col items-center mb-8">
             <Shield className="w-16 h-16 text-accent mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Connect Wallet</h1>
+            <h1 className="text-3xl font-bold mb-2 text-center">
+              Connect With UFVK or Wallet
+            </h1>
             <p className="text-muted-foreground text-center">
               Provide your unified viewing key to access your shielded
               transactions
@@ -147,7 +132,7 @@ const Auth = () => {
           </div>
 
           <Tabs defaultValue="manual" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="manual" className="flex items-center gap-2">
                 <Key className="w-4 h-4" />
                 <span className="hidden sm:inline">Manual</span>
@@ -155,14 +140,6 @@ const Auth = () => {
               <TabsTrigger value="file" className="flex items-center gap-2">
                 <Upload className="w-4 h-4" />
                 <span className="hidden sm:inline">File</span>
-              </TabsTrigger>
-              <TabsTrigger value="qr" className="flex items-center gap-2">
-                <QrCode className="w-4 h-4" />
-                <span className="hidden sm:inline">QR</span>
-              </TabsTrigger>
-              <TabsTrigger value="seed" className="flex items-center gap-2">
-                <Sprout className="w-4 h-4" />
-                <span className="hidden sm:inline">Seed</span>
               </TabsTrigger>
             </TabsList>
 
@@ -220,7 +197,7 @@ const Auth = () => {
                   disabled={loading || !viewingKey}
                   className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
                 >
-                  {loading ? "Connecting..." : "Connect Wallet"}
+                  {loading ? "Connecting..." : "Connect"}
                 </Button>
               </form>
             </TabsContent>
@@ -252,59 +229,6 @@ const Auth = () => {
                   Supported formats: JSON (with viewing_key field) or plain text
                 </p>
               </div>
-            </TabsContent>
-
-            <TabsContent value="qr">
-              <div className="space-y-6">
-                {scannerActive ? (
-                  <div className="relative aspect-square rounded-lg overflow-hidden bg-black">
-                    <Scanner
-                      onScan={(result) => {
-                        if (result?.[0]?.rawValue) {
-                          handleQRScan(result[0].rawValue);
-                        }
-                      }}
-                      onError={(error) => {
-                        console.error("QR Scanner error:", error);
-                        toast({
-                          title: "Scanner Error",
-                          description: "Could not access camera",
-                          variant: "destructive",
-                        });
-                        setScannerActive(false);
-                      }}
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setScannerActive(false)}
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed border-accent/30 rounded-lg p-8 text-center">
-                    <QrCode className="w-12 h-12 text-accent mx-auto mb-4" />
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Scan a QR code containing your viewing key
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setScannerActive(true)}
-                      className="border-accent/50"
-                    >
-                      Start Scanner
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="seed">
-              <SeedPhraseConnect
-                onConnect={(ufvk) => validateAndConnect(ufvk)}
-              />
             </TabsContent>
           </Tabs>
         </Card>

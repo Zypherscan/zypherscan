@@ -5,6 +5,10 @@
       "destination": "/api/proxy-testnet?path=:path*"
     },
     {
+      "source": "/api/scan",
+      "destination": "/api/scan"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/proxy-mainnet?path=:path*"
     },

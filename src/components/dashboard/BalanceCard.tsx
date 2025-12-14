@@ -1,7 +1,6 @@
 import { Card } from "@/components/ui/card";
-import { WalletBalance } from "@/lib/zcash-crypto";
-import { formatZEC } from "@/lib/zcash-crypto";
-import { Wallet, Shield, Clock, Layers, HelpCircle } from "lucide-react";
+import { WalletBalance, formatZEC } from "@/lib/zcash-crypto";
+import { Wallet, Shield, Clock, Layers } from "lucide-react";
 
 interface BalanceCardProps {
   balance: WalletBalance;
