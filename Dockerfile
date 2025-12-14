@@ -1,5 +1,6 @@
 # Multi-stage Dockerfile for ZypherScan
 # Stage 1: Build Rust scanner
+# REBUILD: 2025-12-15-04:38 - Force rebuild with Debian Bookworm for GLIBC 2.38
 FROM rust:latest as rust-builder
 
 # Install dependencies for Rust build

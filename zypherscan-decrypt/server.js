@@ -146,7 +146,32 @@ app.all('/api/*', async (req, res) => {
     }
 });
 
-// 5. Zebra proxy
+// 5. Zebra proxy - handle both /zebra and /zebra/*
+app.all('/zebra', async (req, res) => {
+    const baseUrl = process.env.VITE_ZEBRA_RPC_URL || 'https://mainnet.lightwalletd.com:9067';
+    const targetUrl = baseUrl;
+    
+    console.log(`[Zebra Proxy] ${req.method} ${req.path} -> ${targetUrl}`);
+    
+    try {
+        const fetch = (await import('node-fetch')).default;
+        const response = await fetch(targetUrl, {
+            method: req.method,
+            headers: {
+                'Content-Type': req.headers['content-type'] || 'application/json',
+                ...(req.headers['authorization'] ? { 'Authorization': req.headers['authorization'] } : {}),
+            },
+            body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body),
+        });
+        
+        const data = await response.text();
+        res.status(response.status).send(data);
+    } catch (error) {
+        console.error('[Zebra Proxy] Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.all('/zebra/*', async (req, res) => {
     const baseUrl = process.env.VITE_ZEBRA_RPC_URL || 'https://mainnet.lightwalletd.com:9067';
     const pathWithoutPrefix = req.path.replace('/zebra', '');
