@@ -159,7 +159,7 @@ impl ZypherScanner {
         }).collect()
     }
 
-    pub async fn analyze_history(&self) -> AnalysisReport {
+    pub async fn analyze_history(&mut self) -> AnalysisReport {
         let summaries = match self.client.transaction_summaries(true).await {
              Ok(s) => s.0,
              Err(_) => Vec::new(), 
@@ -232,16 +232,13 @@ impl ZypherScanner {
         // Get Sync Status
         // We assume analyze_history is called after sync loop in main, so it's "Complete"
         // But we can check poll_sync again to be sure or get height
-        let (scan_status, percent, last_height) = match self.client.poll_sync() {
+        let (scan_status, percent, last_synced_height) = match self.client.poll_sync() {
             PollReport::Ready(Ok(_)) => ("Complete".to_string(), 100.0, 0), // Can we get height?
             PollReport::Ready(Err(e)) => (format!("Failed: {}", e), 0.0, 0),
             PollReport::NotReady => ("InProgress".to_string(), 0.0, 0), // Not actually returned by poll_sync in this form instantly?
             PollReport::NoHandle => ("Finished".to_string(), 100.0, 0),
         };
         
-        // Try to get last synced height from wallet
-        let last_synced_height = self.client.wallet.read().await.last_synced_height();
-
         AnalysisReport {
             total_transactions,
             total_received,

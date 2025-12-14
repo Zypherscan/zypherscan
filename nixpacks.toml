@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs", "pnpm", "rustc", "cargo", "pkg-config", "openssl"]
+
+[phases.install]
+cmds = ["pnpm install"]
+
+[phases.build]
+cmds = [
+  "pnpm run build",
+  "cd zypherscan-decrypt && cargo build --release"
+]
+
+[start]
+cmd = "pnpm start"
