@@ -1,10 +1,8 @@
 # Multi-stage Dockerfile for ZypherScan
 # Stage 1: Build Rust scanner
-# REBUILD: 2025-12-15-12:26 - Force complete rebuild
 FROM rust:latest as rust-builder
 
-# Build argument to force rebuild
-ARG CACHEBUST=2025-12-15-12:26
+WORKDIR /build
 
 # Install dependencies for Rust build
 RUN apt-get update && apt-get install -y \
@@ -12,14 +10,12 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /build
-
 # Copy Rust project files
 COPY zypherscan-decrypt/Cargo.toml ./
 COPY zypherscan-decrypt/src ./src
 
 # Build Rust binary in release mode
-RUN echo "Cache bust: $CACHEBUST" && cargo build --release
+RUN cargo build --release
 
 # Stage 2: Build frontend
 FROM node:20-slim as frontend-builder
@@ -46,7 +42,7 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
-# Install Node.js and pnpm
+# Install Node.js and required dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
@@ -75,14 +71,14 @@ RUN mkdir -p zypherscan-decrypt/target/release
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=8080
 
 # Expose port
-EXPOSE 3001
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD node -e "require('http').get('http://localhost:8080/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start the server
+# Start the server (serves both API and static frontend)
 CMD ["pnpm", "start"]

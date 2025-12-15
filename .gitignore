@@ -36,3 +36,4 @@ Cargo.lock
 # Zypherscan specific
 zypherscan-decrypt/target/
 api/target/
+SETUP-COMPLETE.md

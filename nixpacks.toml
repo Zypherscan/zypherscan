@@ -1,14 +1,17 @@
+# Nixpacks configuration for Railway deployment
+# This ensures both Rust and Node.js are available during build
+
 [phases.setup]
-nixPkgs = ["nodejs", "pnpm", "rustc", "cargo", "pkg-config", "openssl"]
+nixPkgs = ["nodejs_20", "rustc", "cargo", "pkg-config", "openssl"]
 
 [phases.install]
-cmds = ["pnpm install"]
+cmds = ["npm install -g pnpm@latest", "pnpm install"]
 
 [phases.build]
 cmds = [
-  "pnpm run build",
-  "cd zypherscan-decrypt && cargo build --release"
+  "cd zypherscan-decrypt && cargo build --release && cd ..",
+  "pnpm run build"
 ]
 
-[start]
-cmd = "pnpm start"
+[phases.start]
+cmd = "node zypherscan-decrypt/server.js"

@@ -1,271 +1,271 @@
-# Zypherscan
+# ZypherScan - Zcash Block Explorer
 
-A privacy-first Zcash blockchain explorer with client-side shielded transaction viewing. Built with React, TypeScript, and modern web technologies.
+A modern Zcash block explorer with transaction decryption capabilities using Unified Viewing Keys.
 
-**Zero trust architecture** - Your viewing keys never leave your device. All transaction decryption happens client-side in your browser.
+## 🏗️ Architecture
 
-![Zypherscan](https://img.shields.io/badge/Zcash-Privacy%20Explorer-F4A21B?style=for-the-badge&logo=zcash)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript)
-![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react)
+This application has a unified architecture:
 
-## ✨ Features
+**Development Mode:**
 
-### 🔐 Client-Side Privacy
+- Frontend (Vite + React): `http://localhost:3000`
+- Backend (Express + Rust): `http://localhost:8080`
+- Frontend proxies API calls to backend
 
-- **Viewing Key Decryption** - Import your unified viewing key (UVK) to decrypt shielded transactions
-- **Local-Only Processing** - All cryptographic operations happen in your browser
-- **QR Code Import** - Scan viewing keys from your mobile wallet
-- **File Import** - Import keys from JSON or text files
-- **No Server Storage** - Keys are stored only in localStorage, never transmitted
+**Production Mode (Railway):**
 
-### 📊 Personal Analytics Dashboard
+- Single Express server on port 8080
+- Serves both static frontend files AND API endpoints
+- No separate frontend server needed
 
-- **Balance Overview** - Total, shielded, and pending balances with Sapling/Orchard breakdown
-- **Transaction History** - Filterable, searchable decrypted transaction list
-- **Volume Charts** - 30-day incoming/outgoing volume visualization
-- **Pool Distribution** - Visual breakdown by shielded pool
-- **Quick Stats** - Transaction count, averages, most active day, total fees
-
-### 🔍 Block Explorer
-
-- **Block Details** - Comprehensive block info with transaction lists
-- **Transaction Details** - Shielded and transparent input/output inspection
-- **Search** - Find blocks, transactions by height, hash, or ID
-- **Real-time Updates** - Live block data from Zebra node
-
-### 📈 Network Privacy Dashboard
-
-- **Shielded Pool Stats** - Total ZEC in Sapling and Orchard pools
-- **Pool Growth Charts** - Historical trend visualization
-- **Network Health** - Block height, difficulty, chain status
-
-### 💾 Data Management
-
-- **CSV/JSON Export** - Download transaction history with customizable filters
-- **Address Book** - Label and save addresses for easy identification
-- **Tax Reporting** - Generate yearly summaries by month
-- **Import/Export** - Backup and restore address book data
-
-### 🔄 Blockchain Sync
-
-- **Lightwalletd Integration** - Efficient blockchain scanning via gRPC
-- **Progress Tracking** - Real-time sync status with ETA
-- **Background Sync** - Non-blocking wallet synchronization
-- **Resume Capability** - Continue from last synced block
-
-## 🛠 Tech Stack
-
-| Category       | Technologies                      |
-| -------------- | --------------------------------- |
-| **Frontend**   | React 18, TypeScript, Vite        |
-| **Styling**    | Tailwind CSS, shadcn/ui           |
-| **State**      | TanStack Query (React Query)      |
-| **Charts**     | Recharts                          |
-| **Backend**    | Supabase Edge Functions           |
-| **Blockchain** | Zebra JSON-RPC, Lightwalletd gRPC |
-
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- pnpm (recommended) or npm
+- Node.js 18+ and pnpm
+- Rust and Cargo (for building the scanner binary)
 
-### Installation
+### Setup
+
+1. **Clone and install:**
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/zypherscan.git
+git clone <your-repo>
 cd zypherscan
-
-# Install dependencies
 pnpm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your settings
-
-# Start development server
-pnpm run dev
 ```
 
-### Environment Variables
-
-Create a `.env` file:
-
-```env
-# Supabase (for caching)
-VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-key"
-
-# Zcash Infrastructure
-VITE_ZEBRA_RPC_URL="https://zebra.up.railway.app"
-VITE_LIGHTWALLETD_GRPC_URL="http://yamanote.proxy.rlwy.net:54918"
-```
-
-## 📱 Routes
-
-| Route        | Description                                             |
-| ------------ | ------------------------------------------------------- |
-| `/`          | Main explorer with search, network stats, recent blocks |
-| `/auth`      | Connect wallet via viewing key                          |
-| `/dashboard` | Personal analytics with transactions and address book   |
-| `/privacy`   | Network-wide privacy statistics                         |
-| `/block/:id` | Block details                                           |
-| `/tx/:txid`  | Transaction details                                     |
-
-## 🔧 Project Structure
-
-```
-src/
-├── components/
-│   ├── dashboard/           # Dashboard-specific components
-│   │   ├── BalanceCard.tsx
-│   │   ├── TransactionList.tsx
-│   │   ├── AnalyticsCharts.tsx
-│   │   ├── PoolDistribution.tsx
-│   │   └── QuickStats.tsx
-│   ├── ui/                  # shadcn/ui components
-│   ├── AddressBook.tsx      # Address labeling
-│   ├── ExportDialog.tsx     # Data export
-│   ├── SyncStatus.tsx       # Sync progress
-│   └── ...
-├── hooks/
-│   ├── useAuth.ts           # Authentication state
-│   ├── useWalletData.ts     # Wallet data management
-│   ├── useSync.ts           # Blockchain sync
-│   ├── useAddressBook.ts    # Address book state
-│   └── useZcashAPI.ts       # Zebra RPC wrapper
-├── lib/
-│   ├── zcash-crypto.ts      # Crypto utilities + WASM interface
-│   ├── lightwalletd.ts      # gRPC client
-│   ├── address-book.ts      # Address book service
-│   ├── export.ts            # Export functionality
-│   └── config.ts            # App configuration
-├── pages/
-│   ├── Index.tsx            # Home/Explorer
-│   ├── Auth.tsx             # Wallet connection
-│   ├── Dashboard.tsx        # Personal dashboard
-│   ├── PrivacyDashboard.tsx # Network stats
-│   ├── BlockDetails.tsx     # Block view
-│   └── TransactionDetails.tsx
-└── App.tsx                  # Route definitions
-```
-
-## 🔐 Security Architecture
-
-Zypherscan is designed with a zero-trust security model:
-
-1. **No Server-Side Keys** - Viewing keys are stored only in the browser's localStorage
-2. **Client-Side Decryption** - All Zcash cryptography runs in WASM in the browser
-3. **No Analytics** - No third-party tracking or data collection
-4. **Open Source** - Full codebase transparency for auditing
-5. **Minimal Data Transmission** - Only block/transaction metadata fetched from servers
-
-### Viewing Key Types
-
-- **Unified Viewing Key (uview)** - Can view Sapling and Orchard transactions
-- **Sapling Viewing Key (zview)** - Can view Sapling transactions only
-
-## 🎨 Design System
-
-The interface follows a dark cypherpunk aesthetic:
-
-- **Colors**: Dark background with orange (#F4A21B) accents
-- **Typography**: JetBrains Mono (code), Outfit (UI)
-- **Effects**: Glassmorphism, subtle glows, smooth animations
-- **Theme**: Privacy-focused, professional, modern
-
-## 📦 Building
+2. **Configure environment:**
 
 ```bash
-# Production build
-pnpm run build
-
-# Preview production build
-pnpm run preview
-
-# Type checking
-pnpm run lint
+cp .env.example .env
+# Edit .env with your API URLs and configuration
 ```
 
-## 🔌 API Integration
+3. **Build Rust binary:**
 
-### Zebra JSON-RPC (Block/Transaction Data)
-
-```
-Endpoint: https://zebra.up.railway.app
-Methods: getblockchaininfo, getblock, getrawtransaction, etc.
+```bash
+pnpm run build:rust
 ```
 
-### Lightwalletd gRPC (Wallet Sync)
+### Development
 
-```
-Endpoint: http://yamanote.proxy.rlwy.net:54918
-Service: CompactTxStreamer
-Methods: GetLatestBlock, GetBlockRange, GetTransaction
-```
+Run frontend and backend in **separate terminals**:
 
-## 🔮 Architecture Notes
+**Terminal 1 - Backend:**
 
-### WASM Integration
-
-The `zcash-crypto.ts` module provides an interface for librustzcash WASM bindings:
-
-```typescript
-// When WASM is loaded:
-await initZcashWasm();
-const decrypted = await decryptTransactions(viewingKey, compactBlocks);
+```bash
+pnpm run dev:backend
+# Runs on http://localhost:8080
 ```
 
-Currently uses simulation mode for demo. Production deployment would load:
+**Terminal 2 - Frontend:**
 
-- `zcash_client_backend` for wallet operations
-- `zcash_primitives` for crypto primitives
-- Protocol buffers for gRPC communication
-
-### Sync Architecture
-
-```
-[Lightwalletd] → [gRPC-Web] → [Sync Service] → [WASM Decryption] → [Local State]
+```bash
+pnpm run dev:frontend
+# Runs on http://localhost:3000
 ```
 
-## 📚 Zcash Concepts
+Visit `http://localhost:3000` in your browser.
 
-### Shielded Pools
+### Production Build (Local Testing)
 
-- **Sapling** (2018) - Efficient zk-SNARKs, widely adopted
-- **Orchard** (2022) - Halo2 proofs, enhanced privacy
+```bash
+# Build everything (Rust binary + frontend)
+pnpm run build:all
 
-### Transaction Types
+# Start the production server
+pnpm start
 
-| Type   | Flow                   | Privacy     |
-| ------ | ---------------------- | ----------- |
-| z-to-z | Shielded → Shielded    | Maximum     |
-| t-to-z | Transparent → Shielded | Shielding   |
-| z-to-t | Shielded → Transparent | Deshielding |
-| t-to-t | Transparent only       | Minimal     |
+# Visit http://localhost:8080
+```
 
-## 🤝 Contributing
+## 🚂 Railway Deployment
 
-Contributions are welcome! Please read our contributing guidelines and submit pull requests.
+### How It Works
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Railway runs a **single server** that:
+
+1. Builds the Rust scanner binary
+2. Builds the React frontend to static files
+3. Starts Express server which:
+   - Serves API endpoints at `/api/*`
+   - Serves static frontend files
+   - Handles SPA routing
+
+### Deployment Steps
+
+1. **Push to GitHub**
+
+2. **Create Railway Project:**
+
+   - Go to [railway.app](https://railway.app)
+   - New Project → Deploy from GitHub
+   - Select your repository
+
+3. **Set Environment Variables:**
+
+   Required:
+
+   ```
+   PORT=8080
+   VITE_CIPHERSCAN_MAINNET_API_URL=https://api.cipherscan.io
+   VITE_CIPHERSCAN_TESTNET_API_URL=https://testnet.cipherscan.io
+   VITE_ZEBRA_RPC_URL=https://mainnet.lightwalletd.com:9067
+   ```
+
+   Optional (if using Supabase):
+
+   ```
+   VITE_SUPABASE_URL=your-supabase-url
+   VITE_SUPABASE_PUBLISHABLE_KEY=your-key
+   ```
+
+4. **Deploy:**
+
+   - Railway auto-detects `nixpacks.toml`
+   - Builds Rust binary + frontend
+   - Starts server with `pnpm start`
+
+5. **Access:**
+   - Railway provides URL: `https://your-app.railway.app`
+   - Both frontend and API available at this URL
+
+## 🐳 Docker Deployment
+
+### Using Docker
+
+**Build and run:**
+
+```bash
+# Build the image
+docker build -t zypherscan .
+
+# Run the container
+docker run -p 8080:8080 \
+  -e VITE_CIPHERSCAN_MAINNET_API_URL=https://api.cipherscan.io \
+  -e VITE_CIPHERSCAN_TESTNET_API_URL=https://testnet.cipherscan.io \
+  -e VITE_ZEBRA_RPC_URL=https://mainnet.lightwalletd.com:9067 \
+  zypherscan
+```
+
+### Using Docker Compose
+
+```bash
+# Create .env file with your variables
+cp .env.example .env
+
+# Build and run
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+Access at `http://localhost:8080`
+
+## 📁 Project Structure
+
+```
+zypherscan/
+├── src/                    # React frontend source
+├── zypherscan-decrypt/     # Rust scanner + Express server
+│   ├── src/               # Rust source code
+│   ├── server.js          # Express server (serves API + static files)
+│   └── scanner_client.js  # Node.js wrapper for Rust binary
+├── dist/                   # Built frontend (created by `pnpm build`)
+├── vite.config.ts         # Vite configuration
+├── nixpacks.toml          # Railway build configuration
+└── package.json           # Dependencies and scripts
+```
+
+## 🔧 API Endpoints
+
+### Scanner API
+
+- `POST /api/scan` - Scan blockchain with viewing key
+  ```json
+  {
+    "uvk": "unified-viewing-key",
+    "birthday": "block-height",
+    "action": "all",
+    "txid": null
+  }
+  ```
+
+### Health Check
+
+- `GET /api/health` - Server health status
+- `GET /api/debug` - Configuration debug info
+
+## 🐛 Troubleshooting
+
+### Development Issues
+
+**"Connection refused" on /api/scan:**
+
+- Make sure backend is running: `pnpm run dev:backend`
+- Backend should be on port 8080
+
+**Frontend not loading:**
+
+- Make sure frontend is running: `pnpm run dev:frontend`
+- Frontend should be on port 3000
+
+### Railway Issues
+
+**Build fails:**
+
+- Check Railway logs for errors
+- Verify `nixpacks.toml` is present
+- Ensure all environment variables are set
+
+**API not working:**
+
+- Check that build completed successfully
+- Verify `dist/` folder was created
+- Check Railway logs for runtime errors
+
+**Rust binary not found:**
+
+- Ensure `build:rust` ran successfully
+- Check that `target/release/zypherscan-decrypt` exists
+
+## 📊 Environment Variables
+
+| Variable                          | Description            | Required | Default               |
+| --------------------------------- | ---------------------- | -------- | --------------------- |
+| `PORT`                            | Server port            | No       | 8080                  |
+| `VITE_CIPHERSCAN_MAINNET_API_URL` | Mainnet API URL        | Yes      | -                     |
+| `VITE_CIPHERSCAN_TESTNET_API_URL` | Testnet API URL        | Yes      | -                     |
+| `VITE_ZEBRA_RPC_URL`              | Zebra RPC URL          | Yes      | -                     |
+| `VITE_BACKEND_URL`                | Backend URL (dev only) | No       | http://localhost:8080 |
+| `FRONTEND_URL`                    | Frontend URL (CORS)    | No       | http://localhost:3000 |
+
+## 📝 Scripts
+
+| Command                 | Description                        |
+| ----------------------- | ---------------------------------- |
+| `pnpm run dev:frontend` | Start Vite dev server (port 3000)  |
+| `pnpm run dev:backend`  | Start Express server (port 8080)   |
+| `pnpm run build`        | Build frontend only                |
+| `pnpm run build:rust`   | Build Rust binary only             |
+| `pnpm run build:all`    | Build everything (Rust + frontend) |
+| `pnpm start`            | Start production server            |
+
+## 🎯 Key Features
+
+- ✅ Unified server architecture for Railway
+- ✅ Separate dev/prod configurations
+- ✅ Rust-powered transaction scanner
+- ✅ React frontend with Vite
+- ✅ API proxying in development
+- ✅ Static file serving in production
+- ✅ CORS configured for all environments
 
 ## 📄 License
 
-MIT License - See [LICENSE](LICENSE) for details.
-
----
-
-_Built with the cypherpunk ethos. Privacy is a right, not a privilege._
-
-**🔗 Links:**
-
-- [Zcash Foundation](https://zfnd.org/)
-- [Electric Coin Company](https://electriccoin.co/)
-- [Zcash Documentation](https://zcash.readthedocs.io/)
+MIT
