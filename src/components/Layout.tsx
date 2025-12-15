@@ -13,6 +13,7 @@ import {
   Shield,
   FileText,
   Settings,
+  LayoutDashboard,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -174,13 +175,13 @@ export const Layout = ({ children }: LayoutProps) => {
                 </div>
               </div>
             ) : (
-              <Link to="/dashboard">
+              <Link to="/auth">
                 <Button
                   size="sm"
                   className="bg-accent/10 text-accent hover:bg-accent/20 border border-accent/20 h-9 px-4"
                 >
                   <Wallet className="w-4 h-4 mr-2" />
-                  Connect Wallet
+                  Connect
                 </Button>
               </Link>
             )}
@@ -249,7 +250,10 @@ export const Layout = ({ children }: LayoutProps) => {
                     </button>
                   </div>
 
-                  <SearchBar variant="header" setIsMobileMenuOpen={setIsMobileMenuOpen} />
+                  <SearchBar
+                    variant="header"
+                    setIsMobileMenuOpen={setIsMobileMenuOpen}
+                  />
                 </div>
 
                 <ScrollArea className="flex-1 py-4">
@@ -257,6 +261,16 @@ export const Layout = ({ children }: LayoutProps) => {
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Tools
                     </div>
+                    <button
+                      onClick={() => {
+                        navigate("/dashboard");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-accent" />
+                      Dashboard
+                    </button>
                     <button
                       onClick={() => {
                         navigate("/mempool");
@@ -339,13 +353,10 @@ export const Layout = ({ children }: LayoutProps) => {
                       </Button>
                     </div>
                   ) : (
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
+                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
                       <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                         <Wallet className="w-4 h-4 mr-2" />
-                        Connect Wallet
+                        Connect
                       </Button>
                     </Link>
                   )}

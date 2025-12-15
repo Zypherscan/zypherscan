@@ -1,271 +1,122 @@
-# Zypherscan
+# ZypherScan - Zcash Block Explorer & Decryption Tool
 
-A privacy-first Zcash blockchain explorer with client-side shielded transaction viewing. Built with React, TypeScript, and modern web technologies.
+ZypherScan is a modern, privacy-focused Zcash block explorer and transaction analyzer. It serves as a frontend interface allowing users to view blockchain data and decrypt shielded transactions using Unified Viewing Keys (UVKs).
 
-**Zero trust architecture** - Your viewing keys never leave your device. All transaction decryption happens client-side in your browser.
+## 🏗️ Architecture
 
-![Zypherscan](https://img.shields.io/badge/Zcash-Privacy%20Explorer-F4A21B?style=for-the-badge&logo=zcash)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript)
-![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react)
+This repository contains the **Frontend Application** built with:
 
-## ✨ Features
+- **Framework:** React + Vite
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + Shadcn UI
+- **Server:** Node.js (Express) for serving static assets and proxying API requests in production.
 
-### 🔐 Client-Side Privacy
+It is designed to connect to external services:
 
-- **Viewing Key Decryption** - Import your unified viewing key (UVK) to decrypt shielded transactions
-- **Local-Only Processing** - All cryptographic operations happen in your browser
-- **QR Code Import** - Scan viewing keys from your mobile wallet
-- **File Import** - Import keys from JSON or text files
-- **No Server Storage** - Keys are stored only in localStorage, never transmitted
+1. **ZypherScan Backend:** A Rust-based scanner service for wallet synchronization and decryption.
+2. **Cipherscan APIs:** For public blockchain data access (Mainnet/Testnet).
+3. **Zebra/Lightwalletd:** For RPC and light client data.
 
-### 📊 Personal Analytics Dashboard
-
-- **Balance Overview** - Total, shielded, and pending balances with Sapling/Orchard breakdown
-- **Transaction History** - Filterable, searchable decrypted transaction list
-- **Volume Charts** - 30-day incoming/outgoing volume visualization
-- **Pool Distribution** - Visual breakdown by shielded pool
-- **Quick Stats** - Transaction count, averages, most active day, total fees
-
-### 🔍 Block Explorer
-
-- **Block Details** - Comprehensive block info with transaction lists
-- **Transaction Details** - Shielded and transparent input/output inspection
-- **Search** - Find blocks, transactions by height, hash, or ID
-- **Real-time Updates** - Live block data from Zebra node
-
-### 📈 Network Privacy Dashboard
-
-- **Shielded Pool Stats** - Total ZEC in Sapling and Orchard pools
-- **Pool Growth Charts** - Historical trend visualization
-- **Network Health** - Block height, difficulty, chain status
-
-### 💾 Data Management
-
-- **CSV/JSON Export** - Download transaction history with customizable filters
-- **Address Book** - Label and save addresses for easy identification
-- **Tax Reporting** - Generate yearly summaries by month
-- **Import/Export** - Backup and restore address book data
-
-### 🔄 Blockchain Sync
-
-- **Lightwalletd Integration** - Efficient blockchain scanning via gRPC
-- **Progress Tracking** - Real-time sync status with ETA
-- **Background Sync** - Non-blocking wallet synchronization
-- **Resume Capability** - Continue from last synced block
-
-## 🛠 Tech Stack
-
-| Category       | Technologies                      |
-| -------------- | --------------------------------- |
-| **Frontend**   | React 18, TypeScript, Vite        |
-| **Styling**    | Tailwind CSS, shadcn/ui           |
-| **State**      | TanStack Query (React Query)      |
-| **Charts**     | Recharts                          |
-| **Backend**    | Supabase Edge Functions           |
-| **Blockchain** | Zebra JSON-RPC, Lightwalletd gRPC |
-
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- pnpm (recommended) or npm
+- pnpm
 
-### Installation
+### Setup
 
-```bash
-# Clone the repository
-git clone https://github.com/your-username/zypherscan.git
-cd zypherscan
+1. **Clone and install:**
 
-# Install dependencies
-pnpm install
+   ```bash
+   git clone <repo-url>
+   cd zypherscan
+   pnpm install
+   ```
 
-# Configure environment
-cp .env.example .env
-# Edit .env with your settings
+2. **Configure environment:**
+   Create a `.env` file (copy from `.env.example` if available) and configure your API endpoints:
 
-# Start development server
-pnpm run dev
-```
+   ```env
+   PORT=3000
 
-### Environment Variables
+   # External Data Providers
+   VITE_MAINNET_RPC_API_URL=""
+   VITE_TESTNET_RPC_API_URL=""
+   VITE_ZEBRA_RPC_URL=""
 
-Create a `.env` file:
+   # ZypherScan Backend (Scanner Service)
+   VITE_BACKEND_API=https://your-backend-service.com/api
+   VITE_BACKEND_API_KEY=your-api-key
+   ```
 
-```env
-# Supabase (for caching)
-VITE_SUPABASE_URL="https://your-project.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-key"
+3. **Run Locally:**
+   ```bash
+   pnpm run dev
+   # App runs at http://localhost:3000
+   ```
 
-# Zcash Infrastructure
-VITE_ZEBRA_RPC_URL="https://zebra.up.railway.app"
-VITE_LIGHTWALLETD_GRPC_URL="http://yamanote.proxy.rlwy.net:54918"
-```
+## 🐳 Docker Deployment
 
-## 📱 Routes
+The project includes a production-ready `Dockerfile` and `docker-compose.yml`.
 
-| Route        | Description                                             |
-| ------------ | ------------------------------------------------------- |
-| `/`          | Main explorer with search, network stats, recent blocks |
-| `/auth`      | Connect wallet via viewing key                          |
-| `/dashboard` | Personal analytics with transactions and address book   |
-| `/privacy`   | Network-wide privacy statistics                         |
-| `/block/:id` | Block details                                           |
-| `/tx/:txid`  | Transaction details                                     |
-
-## 🔧 Project Structure
-
-```
-src/
-├── components/
-│   ├── dashboard/           # Dashboard-specific components
-│   │   ├── BalanceCard.tsx
-│   │   ├── TransactionList.tsx
-│   │   ├── AnalyticsCharts.tsx
-│   │   ├── PoolDistribution.tsx
-│   │   └── QuickStats.tsx
-│   ├── ui/                  # shadcn/ui components
-│   ├── AddressBook.tsx      # Address labeling
-│   ├── ExportDialog.tsx     # Data export
-│   ├── SyncStatus.tsx       # Sync progress
-│   └── ...
-├── hooks/
-│   ├── useAuth.ts           # Authentication state
-│   ├── useWalletData.ts     # Wallet data management
-│   ├── useSync.ts           # Blockchain sync
-│   ├── useAddressBook.ts    # Address book state
-│   └── useZcashAPI.ts       # Zebra RPC wrapper
-├── lib/
-│   ├── zcash-crypto.ts      # Crypto utilities + WASM interface
-│   ├── lightwalletd.ts      # gRPC client
-│   ├── address-book.ts      # Address book service
-│   ├── export.ts            # Export functionality
-│   └── config.ts            # App configuration
-├── pages/
-│   ├── Index.tsx            # Home/Explorer
-│   ├── Auth.tsx             # Wallet connection
-│   ├── Dashboard.tsx        # Personal dashboard
-│   ├── PrivacyDashboard.tsx # Network stats
-│   ├── BlockDetails.tsx     # Block view
-│   └── TransactionDetails.tsx
-└── App.tsx                  # Route definitions
-```
-
-## 🔐 Security Architecture
-
-Zypherscan is designed with a zero-trust security model:
-
-1. **No Server-Side Keys** - Viewing keys are stored only in the browser's localStorage
-2. **Client-Side Decryption** - All Zcash cryptography runs in WASM in the browser
-3. **No Analytics** - No third-party tracking or data collection
-4. **Open Source** - Full codebase transparency for auditing
-5. **Minimal Data Transmission** - Only block/transaction metadata fetched from servers
-
-### Viewing Key Types
-
-- **Unified Viewing Key (uview)** - Can view Sapling and Orchard transactions
-- **Sapling Viewing Key (zview)** - Can view Sapling transactions only
-
-## 🎨 Design System
-
-The interface follows a dark cypherpunk aesthetic:
-
-- **Colors**: Dark background with orange (#F4A21B) accents
-- **Typography**: JetBrains Mono (code), Outfit (UI)
-- **Effects**: Glassmorphism, subtle glows, smooth animations
-- **Theme**: Privacy-focused, professional, modern
-
-## 📦 Building
+### Build & Run
 
 ```bash
-# Production build
-pnpm run build
-
-# Preview production build
-pnpm run preview
-
-# Type checking
-pnpm run lint
+docker-compose up -d --build
 ```
 
-## 🔌 API Integration
+Access the application at `http://localhost:3000`.
 
-### Zebra JSON-RPC (Block/Transaction Data)
+## 🎯 Key Features
 
-```
-Endpoint: https://zebra.up.railway.app
-Methods: getblockchaininfo, getblock, getrawtransaction, etc.
-```
+### 🔐 Secure Authentication & Decryption
 
-### Lightwalletd gRPC (Wallet Sync)
+- **Unified Viewing Keys (UVKs):** Users authenticate using their UVKs.
+- **Network Validation:** The app strictly validates keys against the selected network (`uview`/`zview` for Mainnet, `utest`/`ztest` for Testnet).
+- **Security:** Private keys are never required. Viewing keys are stored locally for the session and cleared on logout/network switch.
 
-```
-Endpoint: http://yamanote.proxy.rlwy.net:54918
-Service: CompactTxStreamer
-Methods: GetLatestBlock, GetBlockRange, GetTransaction
-```
+### 🌐 Multi-Network Support
 
-## 🔮 Architecture Notes
+Seamlessly switch between **Mainnet** and **Testnet** via the header menu.
 
-### WASM Integration
+| Feature             | 🟢 Mainnet                                   | 🟡 Testnet                    |
+| :------------------ | :------------------------------------------- | :---------------------------- |
+| **Dashboard**       | ✅ Full Access (Analytics, History, Balance) | ❌ Disabled (Stability Focus) |
+| **Background Sync** | ✅ Continuous                                | ❌ Disabled                   |
+| **Decryption**      | ✅ Auto & Manual                             | ✅ Manual (Single TX Only)    |
+| **Public Explorer** | ✅ Blocks, Txs, Addresses                    | ✅ Blocks, Txs, Addresses     |
 
-The `zcash-crypto.ts` module provides an interface for librustzcash WASM bindings:
+### 📊 Dashboard (Mainnet)
 
-```typescript
-// When WASM is loaded:
-await initZcashWasm();
-const decrypted = await decryptTransactions(viewingKey, compactBlocks);
-```
+- **Real-time Sync:** Connects to the backend scanner to fetch and decrypt transaction history in the background.
+- **Analytics:** View "Most Active Days", portfolio distribution (Orchard, Sapling, Transparent), and total transaction counts.
+- **Sync Status:** Visual indicator of block scanning progress.
 
-Currently uses simulation mode for demo. Production deployment would load:
+### 🔍 Transaction Details
 
-- `zcash_client_backend` for wallet operations
-- `zcash_primitives` for crypto primitives
-- Protocol buffers for gRPC communication
+- **Decryption:** Manually decrypt specific shielded transactions if you possess the viewing key.
+- **Testnet Mode:** On Testnet, use the "Decrypt This TX" button on the Details page to perform a one-off local decryption probe without full wallet sync.
 
-### Sync Architecture
+## 📁 Project Structure
 
 ```
-[Lightwalletd] → [gRPC-Web] → [Sync Service] → [WASM Decryption] → [Local State]
-```
+zypherscan/
+This application supports both Zcash Mainnet and Testnet, with specific feature availability for each:
 
-## 📚 Zcash Concepts
+### 🟢 Mainnet
 
-### Shielded Pools
+- **Full Dashboard Access**: View complete transaction history, balance summaries, and analytics.
+- **Background Sync**: The application continuously syncs your viewing key in the background to keep data fresh.
+- **Decryption**: Decrypt incoming and outgoing shielded transactions.
 
-- **Sapling** (2018) - Efficient zk-SNARKs, widely adopted
-- **Orchard** (2022) - Halo2 proofs, enhanced privacy
+### 🟡 Testnet
 
-### Transaction Types
-
-| Type   | Flow                   | Privacy     |
-| ------ | ---------------------- | ----------- |
-| z-to-z | Shielded → Shielded    | Maximum     |
-| t-to-z | Transparent → Shielded | Shielding   |
-| z-to-t | Shielded → Transparent | Deshielding |
-| t-to-t | Transparent only       | Minimal     |
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read our contributing guidelines and submit pull requests.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- **Transaction Decryption Only**: You can decrypt individual transactions directly on the Transaction Details page using a Testnet Viewing Key.
+- **No Dashboard**: To ensure stability and focus on specific debugging, the full dashboard and background sync are **disabled** for Testnet.
+- **Usage**: Switch to "Testnet" in the header, navigate to a transaction, and click "Decrypt This TX".
 
 ## 📄 License
 
-MIT License - See [LICENSE](LICENSE) for details.
-
----
-
-_Built with the cypherpunk ethos. Privacy is a right, not a privilege._
-
-**🔗 Links:**
-
-- [Zcash Foundation](https://zfnd.org/)
-- [Electric Coin Company](https://electriccoin.co/)
-- [Zcash Documentation](https://zcash.readthedocs.io/)
+MIT
+```

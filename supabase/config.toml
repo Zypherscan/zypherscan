@@ -1,4 +1,0 @@
-project_id = "ubamzoxssvgvmirucpkd"
-
-[functions.zcash-api]
-verify_jwt = false

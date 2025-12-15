@@ -1,9 +1,9 @@
 export default async function handler(req, res) {
   const { path = '', ...queryParams } = req.query;
-  const baseUrl = process.env.VITE_CIPHERSCAN_MAINNET_API_URL;
+  const baseUrl = process.env.VITE_MAINNET_RPC_API_URL;
 
   if (!baseUrl) {
-    return res.status(500).json({ error: 'Configuration Error: VITE_CIPHERSCAN_MAINNET_API_URL not set' });
+    return res.status(500).json({ error: 'Configuration Error: VITE_MAINNET_RPC_API_URL not set' });
   }
 
   // Helper to ensure URL ends with /api (matching vite.config.ts logic)

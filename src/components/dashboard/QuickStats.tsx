@@ -66,8 +66,13 @@ export function QuickStats({ analytics, transactions }: QuickStatsProps) {
         {
           icon: Calendar,
           label: "Most Active Day",
-          value: analytics.mostActiveDay,
-          subtext: "Based on your history",
+          // The string is now formatted as "Dayname, Month DD" in zcash-crypto.ts
+          // We can split it or just display it.
+          // If we want "Dayname" as value and "Month DD" as subtext:
+          value: analytics.mostActiveDay.split(", ")[0] || "N/A",
+          subtext: analytics.mostActiveDay.includes(",")
+            ? analytics.mostActiveDay.split(", ").slice(1).join(", ")
+            : "Based on your history",
           color: "text-purple-400",
         },
         {

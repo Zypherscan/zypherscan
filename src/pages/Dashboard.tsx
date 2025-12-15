@@ -30,6 +30,7 @@ import {
   Globe,
   DollarSign,
   Cpu,
+  CheckCircle2,
 } from "lucide-react";
 import { MarketStatsBanner } from "@/components/MarketStatsBanner";
 import { formatZEC, formatZECWithSymbol } from "@/lib/zcash-crypto";
@@ -38,8 +39,8 @@ import { TransactionList } from "@/components/dashboard/TransactionList";
 import { AnalyticsCharts } from "@/components/dashboard/AnalyticsCharts";
 import { PoolDistribution } from "@/components/dashboard/PoolDistribution";
 import { QuickStats } from "@/components/dashboard/QuickStats";
-import { SyncStatus } from "@/components/SyncStatus";
 import { AddressBook } from "@/components/AddressBook";
+import { SyncStatusCard } from "@/components/dashboard/SyncStatusCard";
 
 import { ExportDialog } from "@/components/ExportDialog";
 
@@ -99,12 +100,18 @@ const Dashboard = () => {
       setPrivacyStats(privacy);
     };
 
-    if (isConnected) {
+    if (isConnected && !syncStatus.isSyncing) {
       fetchMarketData();
-      const interval = setInterval(fetchMarketData, 60000); // Update every minute
+      const interval = setInterval(fetchMarketData, 120000); // Update every 2 minutes
       return () => clearInterval(interval);
     }
-  }, [isConnected, getZecPrice, getNetworkStatus, getPrivacyStats]);
+  }, [
+    isConnected,
+    getZecPrice,
+    getNetworkStatus,
+    getPrivacyStats,
+    syncStatus.isSyncing,
+  ]);
 
   const handleRescan = () => {
     if (rescanHeight) {
@@ -115,6 +122,7 @@ const Dashboard = () => {
     // Clear last sync height to force rescan
     if (viewingKey) {
       localStorage.removeItem(`zcash_last_sync_${viewingKey}`);
+      localStorage.removeItem(`zcash_wallet_cache_${viewingKey}`);
     }
     setIsRescanOpen(false);
     window.location.reload(); // Reload to trigger fresh sync from useWalletData
@@ -140,80 +148,93 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="container px-6 py-8">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Privacy Dashboard</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold">Privacy Dashboard</h1>
+            </div>
             <p className="text-muted-foreground">
               Your shielded transaction activity, decrypted client-side
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
             {lastUpdated && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Updated {lastUpdated.toLocaleTimeString()}
+                Updated{" "}
+                {lastUpdated.toLocaleString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
               </span>
             )}
-            <ExportDialog transactions={transactions} />
+            <div className="flex flex-wrap items-center gap-2 md:justify-end">
+              <ExportDialog transactions={transactions} />
 
-            <Dialog open={isRescanOpen} onOpenChange={setIsRescanOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-accent/50"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Rescan
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Rescan Blockchain</DialogTitle>
-                  <DialogDescription>
-                    Enter a starting block height (Birthday Height) to rescan
-                    your transactions. This will clear your current sync
-                    progress.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="height">Start Height</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      placeholder="e.g. 2500000"
-                      value={rescanHeight}
-                      onChange={(e) => setRescanHeight(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsRescanOpen(false)}
-                  >
-                    Cancel
+              <Dialog open={isRescanOpen} onOpenChange={setIsRescanOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-accent/50">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Rescan
                   </Button>
-                  <Button onClick={handleRescan}>Start Rescan</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Rescan Blockchain</DialogTitle>
+                    <DialogDescription>
+                      Enter a starting block height (Birthday Height) to rescan
+                      your transactions. This will clear your current sync
+                      progress.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="height">Start Height</Label>
+                      <Input
+                        id="height"
+                        type="number"
+                        placeholder="e.g. 2500000"
+                        value={rescanHeight}
+                        onChange={(e) => setRescanHeight(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsRescanOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button onClick={handleRescan}>Start Rescan</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refresh}
-              disabled={isLoading}
-              className="border-accent/50"
-            >
-              <RefreshCw
-                className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refresh}
+                disabled={isLoading || syncStatus.isSyncing}
+                className="border-accent/50"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${
+                    isLoading || syncStatus.isSyncing ? "animate-spin" : ""
+                  }`}
+                />
+                {syncStatus.isSyncing ? "Syncing..." : "Refresh"}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Sync Status Card */}
+        <SyncStatusCard />
 
         {/* Market & Network Stats Banner */}
         <MarketStatsBanner />
@@ -221,50 +242,43 @@ const Dashboard = () => {
         {/* Viewing Key Info Banner */}
         {viewingKeyInfo && (
           <div className="mb-6 p-4 rounded-lg bg-accent/5 border border-accent/20">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-accent" />
-                <span className="font-medium">Viewing Key</span>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-accent" />
+                  <span className="font-medium">Viewing Key</span>
+                </div>
+                <Badge variant="outline" className="border-accent/30">
+                  {viewingKeyInfo.network === "mainnet" ? "Mainnet" : "Testnet"}
+                </Badge>
+                {viewingKeyInfo.components.hasOrchard && (
+                  <Badge className="bg-terminal-green/20 text-terminal-green border-terminal-green/30">
+                    Orchard
+                  </Badge>
+                )}
+                {viewingKeyInfo.components.hasSapling && (
+                  <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                    Sapling
+                  </Badge>
+                )}
               </div>
-              <Badge variant="outline" className="border-accent/30">
-                {viewingKeyInfo.network === "mainnet" ? "Mainnet" : "Testnet"}
-              </Badge>
-              {viewingKeyInfo.components.hasOrchard && (
-                <Badge className="bg-terminal-green/20 text-terminal-green border-terminal-green/30">
-                  Orchard
-                </Badge>
-              )}
-              {viewingKeyInfo.components.hasSapling && (
-                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                  Sapling
-                </Badge>
-              )}
-              <span className="text-xs text-muted-foreground ml-auto">
+              <span className="text-xs text-muted-foreground">
                 All decryption happens locally in your browser
               </span>
             </div>
           </div>
         )}
 
-        {/* Sync Status */}
-        <div className="mb-6">
-          <SyncStatus variant="full" />
-        </div>
-
         {/* Debug Info - Always Visible */}
         <div className="mb-6 p-4 bg-card/30 rounded-lg border border-border/50 text-xs font-mono text-muted-foreground">
-          <p>Sync Status: {syncStatus.isSyncing ? "Syncing..." : "Idle"}</p>
-          <p>Current Height: {syncStatus.currentHeight}</p>
+          <p>Sync Status: {syncStatus.isSyncing ? "Syncing..." : "Synced"}</p>
+          <p>Current Height: {syncStatus.networkHeight}</p>
           <p>Transactions Found: {transactions.length}</p>
           <p>
             Viewing Key: {viewingKey ? viewingKey.slice(0, 10) + "..." : "None"}
           </p>
           <p>Birthday Height: {getBirthdayHeight() || "Default (500k)"}</p>
-          <p>WASM Ready: {syncStatus.isWasmReady ? "Yes" : "No"}</p>
-          <p className="text-yellow-500 mt-2">
-            Note: The current WASM module ONLY supports Orchard shielded
-            transactions. Sapling transactions cannot be decrypted.
-          </p>
+          <p>Scanner Active: Yes</p>
         </div>
 
         {/* Error State */}
@@ -277,17 +291,6 @@ const Dashboard = () => {
         {/* Loading State */}
         {isLoading ? (
           <div className="space-y-6">
-            {/* Debug Info - Temporary */}
-            <div className="mb-6 p-4 bg-card/30 rounded-lg border border-border/50 text-xs font-mono text-muted-foreground">
-              <p>Sync Status: {syncStatus.isSyncing ? "Syncing..." : "Idle"}</p>
-              <p>Current Height: {syncStatus.currentHeight}</p>
-              <p>Transactions Found: {transactions.length}</p>
-              <p>
-                Viewing Key:{" "}
-                {viewingKey ? viewingKey.slice(0, 10) + "..." : "None"}
-              </p>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {[1, 2, 3, 4].map((i) => (
                 <Skeleton key={i} className="h-32" />
