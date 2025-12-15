@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    { "source": "/zebra", "destination": "/api/proxy-zebra" },
+    { "source": "/zebra/(.*)", "destination": "/api/proxy-zebra?path=$1" },
+    { "source": "/api-testnet", "destination": "/api/proxy-testnet" },
+    { "source": "/api-testnet/(.*)", "destination": "/api/proxy-testnet?path=$1" },
+    { "source": "/api/zypher", "destination": "/api/proxy-zypher" },
+    { "source": "/api/zypher/(.*)", "destination": "/api/proxy-zypher?path=$1" },
+    { "source": "/api/(?!proxy-)(.*)", "destination": "/api/proxy-mainnet?path=$1" },
+    { "source": "/((?!api/|assets/|.*\\..*).*)", "destination": "/index.html" }
+  ]
+}
