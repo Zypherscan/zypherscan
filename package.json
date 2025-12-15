@@ -1,12 +1,13 @@
 {
   "name": "zypherscan",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:frontend": "vite",
     "dev:backend": "node zypherscan-decrypt/server.js",
+    "dev:all": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:frontend\" --names \"backend,frontend\" --prefix-colors \"blue,green\"",
     "build": "vite build",
     "build:rust": "cd zypherscan-decrypt && cargo build --release",
     "build:all": "pnpm run build:rust && pnpm run build",

@@ -50,6 +50,17 @@ pnpm run build:rust
 
 ### Development
 
+**Option 1: Run both together (Recommended)**
+
+```bash
+pnpm run dev:all
+```
+
+This starts both backend (port 8080) and frontend (port 3000) in one terminal.
+Visit `http://localhost:3000` in your browser.
+
+**Option 2: Run separately**
+
 Run frontend and backend in **separate terminals**:
 
 **Terminal 1 - Backend:**
@@ -247,14 +258,15 @@ zypherscan/
 
 ## 📝 Scripts
 
-| Command                 | Description                        |
-| ----------------------- | ---------------------------------- |
-| `pnpm run dev:frontend` | Start Vite dev server (port 3000)  |
-| `pnpm run dev:backend`  | Start Express server (port 8080)   |
-| `pnpm run build`        | Build frontend only                |
-| `pnpm run build:rust`   | Build Rust binary only             |
-| `pnpm run build:all`    | Build everything (Rust + frontend) |
-| `pnpm start`            | Start production server            |
+| Command                 | Description                            |
+| ----------------------- | -------------------------------------- |
+| `pnpm run dev:all`      | Run both frontend and backend together |
+| `pnpm run dev:frontend` | Start Vite dev server (port 3000)      |
+| `pnpm run dev:backend`  | Start Express server (port 8080)       |
+| `pnpm run build`        | Build frontend only                    |
+| `pnpm run build:rust`   | Build Rust binary only                 |
+| `pnpm run build:all`    | Build everything (Rust + frontend)     |
+| `pnpm start`            | Start production server                |
 
 ## 🎯 Key Features
 
