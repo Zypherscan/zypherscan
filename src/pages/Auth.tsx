@@ -9,16 +9,30 @@ import { Shield, ArrowLeft, Upload, Key, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
+import { useAuth } from "@/hooks/useAuth";
+import { parseViewingKey } from "@/lib/zcash-crypto";
+import { useNetwork } from "@/contexts/NetworkContext";
+
 // Zcash unified viewing key validation (starts with 'uview' for mainnet)
 const viewingKeySchema = z
   .string()
   .min(100, "Viewing key is too short")
   .max(1000, "Viewing key is too long")
-  .refine((key) => key.startsWith("uview") || key.startsWith("zview"), {
-    message: "Invalid viewing key format. Must start with 'uview' or 'zview'",
-  });
+  .refine(
+    (key) =>
+      key.startsWith("uview") ||
+      key.startsWith("zview") ||
+      key.startsWith("utest") ||
+      key.startsWith("ztest"),
+    {
+      message:
+        "Invalid viewing key format. Must start with 'uview', 'zview', 'utest', or 'ztest'",
+    }
+  );
 
 const Auth = () => {
+  const { login } = useAuth();
+  const { network } = useNetwork();
   const [viewingKey, setViewingKey] = useState("");
   const [birthdayHeight, setBirthdayHeight] = useState("");
   const [showKey, setShowKey] = useState(false);
@@ -32,28 +46,38 @@ const Auth = () => {
     const connected = localStorage.getItem("zcash_connected") === "true";
     const storedKey = localStorage.getItem("zcash_viewing_key");
     if (connected && storedKey) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [navigate]);
 
   const validateAndConnect = (key: string) => {
     try {
+      // 1. Basic Format Validation
       viewingKeySchema.parse(key.trim());
 
-      // Store viewing key client-side only
-      localStorage.setItem("zcash_viewing_key", key.trim());
-      localStorage.setItem("zcash_connected", "true");
+      // 2. Network Compatibility Check
+      const keyInfo = parseViewingKey(key.trim());
+      if (keyInfo.network !== network) {
+        toast({
+          title: "Network Mismatch",
+          description: `This key is for ${keyInfo.network}, but you are currently on ${network}. Please switch networks in the header.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Use context login to update state globally
       if (birthdayHeight) {
-        localStorage.setItem("zcash_birthday_height", birthdayHeight);
+        login(key.trim(), parseInt(birthdayHeight));
       } else {
-        localStorage.removeItem("zcash_birthday_height");
+        login(key.trim());
       }
 
       toast({
         title: "Wallet Connected",
         description: "Your viewing key has been securely stored locally",
       });
-      navigate("/");
+      navigate("/dashboard");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({

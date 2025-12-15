@@ -1,283 +1,122 @@
-# ZypherScan - Zcash Block Explorer
+# ZypherScan - Zcash Block Explorer & Decryption Tool
 
-A modern Zcash block explorer with transaction decryption capabilities using Unified Viewing Keys.
+ZypherScan is a modern, privacy-focused Zcash block explorer and transaction analyzer. It serves as a frontend interface allowing users to view blockchain data and decrypt shielded transactions using Unified Viewing Keys (UVKs).
 
 ## 🏗️ Architecture
 
-This application has a unified architecture:
+This repository contains the **Frontend Application** built with:
 
-**Development Mode:**
+- **Framework:** React + Vite
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + Shadcn UI
+- **Server:** Node.js (Express) for serving static assets and proxying API requests in production.
 
-- Frontend (Vite + React): `http://localhost:3000`
-- Backend (Express + Rust): `http://localhost:8080`
-- Frontend proxies API calls to backend
+It is designed to connect to external services:
 
-**Production Mode (Railway):**
-
-- Single Express server on port 8080
-- Serves both static frontend files AND API endpoints
-- No separate frontend server needed
+1. **ZypherScan Backend:** A Rust-based scanner service for wallet synchronization and decryption.
+2. **Cipherscan APIs:** For public blockchain data access (Mainnet/Testnet).
+3. **Zebra/Lightwalletd:** For RPC and light client data.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm
-- Rust and Cargo (for building the scanner binary)
+- Node.js 18+
+- pnpm
 
 ### Setup
 
 1. **Clone and install:**
 
-```bash
-git clone <your-repo>
-cd zypherscan
-pnpm install
-```
+   ```bash
+   git clone <repo-url>
+   cd zypherscan
+   pnpm install
+   ```
 
 2. **Configure environment:**
+   Create a `.env` file (copy from `.env.example` if available) and configure your API endpoints:
 
-```bash
-cp .env.example .env
-# Edit .env with your API URLs and configuration
-```
+   ```env
+   PORT=3000
 
-3. **Build Rust binary:**
+   # External Data Providers
+   VITE_MAINNET_RPC_API_URL=""
+   VITE_TESTNET_RPC_API_URL=""
+   VITE_ZEBRA_RPC_URL=""
 
-```bash
-pnpm run build:rust
-```
-
-### Development
-
-**Option 1: Run both together (Recommended)**
-
-```bash
-pnpm run dev:all
-```
-
-This starts both backend (port 8080) and frontend (port 3000) in one terminal.
-Visit `http://localhost:3000` in your browser.
-
-**Option 2: Run separately**
-
-Run frontend and backend in **separate terminals**:
-
-**Terminal 1 - Backend:**
-
-```bash
-pnpm run dev:backend
-# Runs on http://localhost:8080
-```
-
-**Terminal 2 - Frontend:**
-
-```bash
-pnpm run dev:frontend
-# Runs on http://localhost:3000
-```
-
-Visit `http://localhost:3000` in your browser.
-
-### Production Build (Local Testing)
-
-```bash
-# Build everything (Rust binary + frontend)
-pnpm run build:all
-
-# Start the production server
-pnpm start
-
-# Visit http://localhost:8080
-```
-
-## 🚂 Railway Deployment
-
-### How It Works
-
-Railway runs a **single server** that:
-
-1. Builds the Rust scanner binary
-2. Builds the React frontend to static files
-3. Starts Express server which:
-   - Serves API endpoints at `/api/*`
-   - Serves static frontend files
-   - Handles SPA routing
-
-### Deployment Steps
-
-1. **Push to GitHub**
-
-2. **Create Railway Project:**
-
-   - Go to [railway.app](https://railway.app)
-   - New Project → Deploy from GitHub
-   - Select your repository
-
-3. **Set Environment Variables:**
-
-   Required:
-
-   ```
-   PORT=8080
-   VITE_CIPHERSCAN_MAINNET_API_URL=https://api.cipherscan.io
-   VITE_CIPHERSCAN_TESTNET_API_URL=https://testnet.cipherscan.io
-   VITE_ZEBRA_RPC_URL=https://mainnet.lightwalletd.com:9067
+   # ZypherScan Backend (Scanner Service)
+   VITE_BACKEND_API=https://your-backend-service.com/api
+   VITE_BACKEND_API_KEY=your-api-key
    ```
 
-   Optional (if using Supabase):
-
+3. **Run Locally:**
+   ```bash
+   pnpm run dev
+   # App runs at http://localhost:3000
    ```
-   VITE_SUPABASE_URL=your-supabase-url
-   VITE_SUPABASE_PUBLISHABLE_KEY=your-key
-   ```
-
-4. **Deploy:**
-
-   - Railway auto-detects `nixpacks.toml`
-   - Builds Rust binary + frontend
-   - Starts server with `pnpm start`
-
-5. **Access:**
-   - Railway provides URL: `https://your-app.railway.app`
-   - Both frontend and API available at this URL
 
 ## 🐳 Docker Deployment
 
-### Using Docker
+The project includes a production-ready `Dockerfile` and `docker-compose.yml`.
 
-**Build and run:**
-
-```bash
-# Build the image
-docker build -t zypherscan .
-
-# Run the container
-docker run -p 8080:8080 \
-  -e VITE_CIPHERSCAN_MAINNET_API_URL=https://api.cipherscan.io \
-  -e VITE_CIPHERSCAN_TESTNET_API_URL=https://testnet.cipherscan.io \
-  -e VITE_ZEBRA_RPC_URL=https://mainnet.lightwalletd.com:9067 \
-  zypherscan
-```
-
-### Using Docker Compose
+### Build & Run
 
 ```bash
-# Create .env file with your variables
-cp .env.example .env
-
-# Build and run
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
+docker-compose up -d --build
 ```
 
-Access at `http://localhost:8080`
+Access the application at `http://localhost:3000`.
+
+## 🎯 Key Features
+
+### 🔐 Secure Authentication & Decryption
+
+- **Unified Viewing Keys (UVKs):** Users authenticate using their UVKs.
+- **Network Validation:** The app strictly validates keys against the selected network (`uview`/`zview` for Mainnet, `utest`/`ztest` for Testnet).
+- **Security:** Private keys are never required. Viewing keys are stored locally for the session and cleared on logout/network switch.
+
+### 🌐 Multi-Network Support
+
+Seamlessly switch between **Mainnet** and **Testnet** via the header menu.
+
+| Feature             | 🟢 Mainnet                                   | 🟡 Testnet                    |
+| :------------------ | :------------------------------------------- | :---------------------------- |
+| **Dashboard**       | ✅ Full Access (Analytics, History, Balance) | ❌ Disabled (Stability Focus) |
+| **Background Sync** | ✅ Continuous                                | ❌ Disabled                   |
+| **Decryption**      | ✅ Auto & Manual                             | ✅ Manual (Single TX Only)    |
+| **Public Explorer** | ✅ Blocks, Txs, Addresses                    | ✅ Blocks, Txs, Addresses     |
+
+### 📊 Dashboard (Mainnet)
+
+- **Real-time Sync:** Connects to the backend scanner to fetch and decrypt transaction history in the background.
+- **Analytics:** View "Most Active Days", portfolio distribution (Orchard, Sapling, Transparent), and total transaction counts.
+- **Sync Status:** Visual indicator of block scanning progress.
+
+### 🔍 Transaction Details
+
+- **Decryption:** Manually decrypt specific shielded transactions if you possess the viewing key.
+- **Testnet Mode:** On Testnet, use the "Decrypt This TX" button on the Details page to perform a one-off local decryption probe without full wallet sync.
 
 ## 📁 Project Structure
 
 ```
 zypherscan/
-├── src/                    # React frontend source
-├── zypherscan-decrypt/     # Rust scanner + Express server
-│   ├── src/               # Rust source code
-│   ├── server.js          # Express server (serves API + static files)
-│   └── scanner_client.js  # Node.js wrapper for Rust binary
-├── dist/                   # Built frontend (created by `pnpm build`)
-├── vite.config.ts         # Vite configuration
-├── nixpacks.toml          # Railway build configuration
-└── package.json           # Dependencies and scripts
-```
+This application supports both Zcash Mainnet and Testnet, with specific feature availability for each:
 
-## 🔧 API Endpoints
+### 🟢 Mainnet
 
-### Scanner API
+- **Full Dashboard Access**: View complete transaction history, balance summaries, and analytics.
+- **Background Sync**: The application continuously syncs your viewing key in the background to keep data fresh.
+- **Decryption**: Decrypt incoming and outgoing shielded transactions.
 
-- `POST /api/scan` - Scan blockchain with viewing key
-  ```json
-  {
-    "uvk": "unified-viewing-key",
-    "birthday": "block-height",
-    "action": "all",
-    "txid": null
-  }
-  ```
+### 🟡 Testnet
 
-### Health Check
-
-- `GET /api/health` - Server health status
-- `GET /api/debug` - Configuration debug info
-
-## 🐛 Troubleshooting
-
-### Development Issues
-
-**"Connection refused" on /api/scan:**
-
-- Make sure backend is running: `pnpm run dev:backend`
-- Backend should be on port 8080
-
-**Frontend not loading:**
-
-- Make sure frontend is running: `pnpm run dev:frontend`
-- Frontend should be on port 3000
-
-### Railway Issues
-
-**Build fails:**
-
-- Check Railway logs for errors
-- Verify `nixpacks.toml` is present
-- Ensure all environment variables are set
-
-**API not working:**
-
-- Check that build completed successfully
-- Verify `dist/` folder was created
-- Check Railway logs for runtime errors
-
-**Rust binary not found:**
-
-- Ensure `build:rust` ran successfully
-- Check that `target/release/zypherscan-decrypt` exists
-
-## 📊 Environment Variables
-
-| Variable                          | Description            | Required | Default               |
-| --------------------------------- | ---------------------- | -------- | --------------------- |
-| `PORT`                            | Server port            | No       | 8080                  |
-| `VITE_CIPHERSCAN_MAINNET_API_URL` | Mainnet API URL        | Yes      | -                     |
-| `VITE_CIPHERSCAN_TESTNET_API_URL` | Testnet API URL        | Yes      | -                     |
-| `VITE_ZEBRA_RPC_URL`              | Zebra RPC URL          | Yes      | -                     |
-| `VITE_BACKEND_URL`                | Backend URL (dev only) | No       | http://localhost:8080 |
-| `FRONTEND_URL`                    | Frontend URL (CORS)    | No       | http://localhost:3000 |
-
-## 📝 Scripts
-
-| Command                 | Description                            |
-| ----------------------- | -------------------------------------- |
-| `pnpm run dev:all`      | Run both frontend and backend together |
-| `pnpm run dev:frontend` | Start Vite dev server (port 3000)      |
-| `pnpm run dev:backend`  | Start Express server (port 8080)       |
-| `pnpm run build`        | Build frontend only                    |
-| `pnpm run build:rust`   | Build Rust binary only                 |
-| `pnpm run build:all`    | Build everything (Rust + frontend)     |
-| `pnpm start`            | Start production server                |
-
-## 🎯 Key Features
-
-- ✅ Unified server architecture for Railway
-- ✅ Separate dev/prod configurations
-- ✅ Rust-powered transaction scanner
-- ✅ React frontend with Vite
-- ✅ API proxying in development
-- ✅ Static file serving in production
-- ✅ CORS configured for all environments
+- **Transaction Decryption Only**: You can decrypt individual transactions directly on the Transaction Details page using a Testnet Viewing Key.
+- **No Dashboard**: To ensure stability and focus on specific debugging, the full dashboard and background sync are **disabled** for Testnet.
+- **Usage**: Switch to "Testnet" in the header, navigate to a transaction, and click "Decrypt This TX".
 
 ## 📄 License
 
 MIT
+```

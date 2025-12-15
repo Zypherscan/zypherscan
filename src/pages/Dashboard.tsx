@@ -40,6 +40,7 @@ import { AnalyticsCharts } from "@/components/dashboard/AnalyticsCharts";
 import { PoolDistribution } from "@/components/dashboard/PoolDistribution";
 import { QuickStats } from "@/components/dashboard/QuickStats";
 import { AddressBook } from "@/components/AddressBook";
+import { SyncStatusCard } from "@/components/dashboard/SyncStatusCard";
 
 import { ExportDialog } from "@/components/ExportDialog";
 
@@ -151,26 +152,6 @@ const Dashboard = () => {
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-3xl font-bold">Privacy Dashboard</h1>
-              <Badge
-                variant="outline"
-                className={`${
-                  syncStatus.isSyncing
-                    ? "text-yellow-400 border-yellow-400/30 bg-yellow-400/10"
-                    : "text-terminal-green border-terminal-green/30 bg-terminal-green/10"
-                }`}
-              >
-                {syncStatus.isSyncing ? (
-                  <span className="flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 animate-spin" />
-                    Syncing...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Synced
-                  </span>
-                )}
-              </Badge>
             </div>
             <p className="text-muted-foreground">
               Your shielded transaction activity, decrypted client-side
@@ -180,7 +161,15 @@ const Dashboard = () => {
             {lastUpdated && (
               <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                Updated {lastUpdated.toLocaleTimeString()}
+                Updated{" "}
+                {lastUpdated.toLocaleString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
               </span>
             )}
             <div className="flex flex-wrap items-center gap-2 md:justify-end">
@@ -243,6 +232,9 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Sync Status Card */}
+        <SyncStatusCard />
 
         {/* Market & Network Stats Banner */}
         <MarketStatsBanner />

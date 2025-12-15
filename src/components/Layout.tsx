@@ -175,7 +175,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 </div>
               </div>
             ) : (
-              <Link to="/dashboard">
+              <Link to="/auth">
                 <Button
                   size="sm"
                   className="bg-accent/10 text-accent hover:bg-accent/20 border border-accent/20 h-9 px-4"
@@ -353,10 +353,7 @@ export const Layout = ({ children }: LayoutProps) => {
                       </Button>
                     </div>
                   ) : (
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
+                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
                       <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                         <Wallet className="w-4 h-4 mr-2" />
                         Connect

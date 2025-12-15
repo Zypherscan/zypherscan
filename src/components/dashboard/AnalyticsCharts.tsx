@@ -8,8 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
   Legend,
 } from "recharts";
 import { TrendingUp, BarChart3 } from "lucide-react";

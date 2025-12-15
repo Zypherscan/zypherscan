@@ -1,28 +1,6 @@
 import { useMemo } from "react";
-import { useWalletContext } from "@/contexts/WalletDataContext";
-import {
-  DecryptedTransaction,
-  WalletBalance,
-  generateAnalytics,
-  ViewingKeyInfo,
-} from "@/lib/zcash-crypto";
-
-export interface WalletData {
-  transactions: DecryptedTransaction[];
-  balance: WalletBalance;
-  analytics: ReturnType<typeof generateAnalytics> | null;
-  viewingKeyInfo: ViewingKeyInfo | null;
-  isLoading: boolean;
-  error: string | null;
-  lastUpdated: Date | null;
-  refresh: () => void;
-  syncStatus: {
-    currentHeight: number;
-    networkHeight: number;
-    isSyncing: boolean;
-    message: string;
-  };
-}
+import { useWalletContext, WalletData } from "@/contexts/WalletDataContext";
+import { DecryptedTransaction } from "@/lib/zcash-crypto";
 
 export function useWalletData(): WalletData {
   // Proxy to context

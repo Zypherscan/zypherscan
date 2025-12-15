@@ -253,7 +253,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
                           {tx.type === "incoming"
                             ? "+"
                             : tx.type === "outgoing"
-                            ? "-"
+                            ? ""
                             : ""}
                           {formatZEC(tx.amount)} ZEC
                         </p>
@@ -345,7 +345,9 @@ export function TransactionList({ transactions }: TransactionListProps) {
                           Memo
                         </span>
                         <div className="bg-background/50 rounded p-3 border border-accent/10">
-                          <p className="text-sm">{tx.memo}</p>
+                          <p className="text-sm whitespace-pre-wrap break-words font-mono">
+                            {tx.memo}
+                          </p>
                         </div>
                       </div>
                     )}

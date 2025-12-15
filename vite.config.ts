@@ -14,35 +14,29 @@ export default defineConfig(({ mode }) => {
     return `${clean}/api`;
   };
 
-  const MAINNET_API = normalizeApiUrl(
-    env.VITE_CIPHERSCAN_MAINNET_API_URL || ""
-  );
-  const TESTNET_API = normalizeApiUrl(
-    env.VITE_CIPHERSCAN_TESTNET_API_URL || ""
-  );
+  const MAINNET_API = normalizeApiUrl(env.VITE_MAINNET_RPC_API_URL || "");
+  const TESTNET_API = normalizeApiUrl(env.VITE_TESTNET_RPC_API_URL || "");
   const ZEBRA_API = (env.VITE_ZEBRA_RPC_URL || "").trim();
-
-  // In development, proxy to backend server on port 8080
-  const BACKEND_URL = env.VITE_BACKEND_URL || "http://localhost:8080";
 
   return {
     server: {
       host: "::",
       port: 3000,
       proxy: {
-        // Backend API endpoints - only used in development
-        // In production, Express serves both frontend and API on same port
-        "/api/scan": {
-          target: BACKEND_URL,
+        // Proxy to Railway Backend directly
+        // Vite server (Node.js) adds the API key, so it's not visible in browser dev tools
+        "/api/zypher": {
+          target: env.VITE_BACKEND_API,
           changeOrigin: true,
-        },
-        "/api/health": {
-          target: BACKEND_URL,
-          changeOrigin: true,
-        },
-        "/api/debug": {
-          target: BACKEND_URL,
-          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/zypher/, ""),
+          configure: (proxy, _options) => {
+            proxy.on("proxyReq", (proxyReq, _req, _res) => {
+              const apiKey = env.VITE_BACKEND_API_KEY || "";
+              if (apiKey) {
+                proxyReq.setHeader("x-api-key", apiKey);
+              }
+            });
+          },
         },
         // External API proxies
         "/api-testnet": {

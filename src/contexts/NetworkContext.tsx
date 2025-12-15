@@ -25,9 +25,19 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleSetNetwork = (newNetwork: NetworkType) => {
     if (newNetwork === network) return;
+
+    // Clear Auth Data on Network Switch
+    localStorage.removeItem("zcash_connected");
+    localStorage.removeItem("zcash_viewing_key");
+    localStorage.removeItem("zcash_birthday_height");
+    localStorage.removeItem(`zcash_wallet_cache_v2_`); // Might want to clear specific cache, but simplistic for now
+
+    // Save new network selection
     localStorage.setItem("zcash_network", newNetwork);
     setNetwork(newNetwork);
-    window.location.reload();
+
+    // Redirect to homepage (reloads app with clean state)
+    window.location.href = "/";
   };
 
   // Determine API base based on network

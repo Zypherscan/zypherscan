@@ -5,7 +5,12 @@ import { useWalletData } from "@/hooks/useWalletData";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 // import { decryptMemo } from "@/lib/wasm-loader"; // Removed WASM
 // import { supabase } from "@/integrations/supabase/client"; // Removed Supabase
-import { scanWallet } from "@/lib/scanner-api";
+import {
+  initScanner,
+  getMemo,
+  getTransaction,
+  startSync,
+} from "@/lib/scanner-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -26,8 +31,21 @@ const DecryptTool = () => {
   );
   const [error, setError] = useState<string | null>(null);
 
+  // Optional: Manual key input state if valid reuse isn't implemented elsewhere
+  // The original file didn't seem to have manualKey state used in the JSX shown,
+  // but let's check the original content provided in Step 42.
+  // It only had txid input. The user might want to decrypt specific txid with loaded key.
+  // But wait, my previous patch attempt referred to 'manualKey'.
+  // Step 42 file content DOES NOT show manualKey state.
+  // I might have hallucinated it or mixed it up with TransactionDetails.
+  // I will stick to Step 42 content + my fix.
+  // Step 42 content:
+  // const [txid, setTxid] = useState("");
+  // ...
+
   const handleDecrypt = async () => {
     if (!txid) return;
+
     if (!isConnected || !viewingKey) {
       toast({
         title: "Wallet not connected",
@@ -42,7 +60,6 @@ const DecryptTool = () => {
     setResult(null);
 
     // OPTIMIZATION: Check if we already have this transaction in our history
-    // This assumes the user has already synced on the Dashboard.
     if (transactions.length > 0) {
       const found = transactions.find((t) => t.txid === txid);
       if (found) {
@@ -62,49 +79,49 @@ const DecryptTool = () => {
       }
     }
 
-    // If not found, fall back to scanning specifically for this TXID
     try {
       const birthday = getBirthdayHeight();
-      const response = await scanWallet(viewingKey, birthday, "memo", txid);
 
-      if (response.raw) {
-        // Parse raw output for "Memo <n>: <content>"
-        const raw = response.raw;
-        if (raw.includes("Transaction not found")) {
-          throw new Error(
-            "Transaction not found in history. Ensure the wallet is synced."
-          );
-        }
+      // Ensure session is active (although context should have done it, we re-init to be safe or if context failed)
+      await initScanner(viewingKey, birthday);
+      await startSync();
 
-        // ... rest of parsing logic ...
-        if (raw.includes("No memos found")) {
+      // Try to get transaction details first (includes amount and memo)
+      try {
+        const tx = await getTransaction(txid);
+        if (tx && tx.txid === txid) {
           setResult({
-            memo: "No memos found for this transaction.",
-            amount: 0,
-          });
-          return;
-        }
-
-        const lines = raw.split("\n");
-        const memoLines = lines.filter((l) => l.trim().startsWith("Memo"));
-        const memoText = memoLines
-          .map((l) => l.replace(/^Memo \d+: /, ""))
-          .join("\n\n");
-
-        if (memoText) {
-          setResult({
-            memo: memoText,
-            amount: 0,
+            memo: tx.memos ? tx.memos.join("\n\n") : "No memos found",
+            amount: tx.value / 100000000,
           });
           toast({
             title: "Success!",
             description: "Transaction decrypted successfully.",
           });
-        } else {
-          throw new Error("Could not parse memos from output.");
+          return;
         }
+      } catch (e) {
+        console.log(
+          "Transaction not found in index, trying memo specific endpoint..."
+        );
+      }
+
+      // Fallback to getMemo if getTransaction fails
+      const memoResponse = await getMemo(txid);
+      if (memoResponse && (memoResponse.memo || memoResponse.memos)) {
+        const memoText =
+          memoResponse.memo ||
+          (memoResponse.memos ? memoResponse.memos.join("\n\n") : "");
+        setResult({
+          memo: memoText || "No memos found",
+          amount: 0,
+        });
+        toast({
+          title: "Success!",
+          description: "Memo recovered.",
+        });
       } else {
-        throw new Error("No response from scanner.");
+        throw new Error("Transaction not found or could not be decrypted.");
       }
     } catch (err) {
       console.error("Decryption failed:", err);

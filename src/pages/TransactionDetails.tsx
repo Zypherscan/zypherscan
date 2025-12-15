@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 // import { supabase } from "@/integrations/supabase/client";
 // import { decryptMemo, DecryptedOutput } from "@/lib/wasm-loader";
 import { DecryptedOutput } from "@/lib/wasm-loader"; // Keep type if needed, or define locally
-import { scanWallet } from "@/lib/scanner-api";
+import { formatZEC } from "@/lib/zcash-crypto";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletData } from "@/hooks/useWalletData";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +37,7 @@ import {
   Unlock,
   Eye,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -110,6 +110,7 @@ const TransactionDetails = () => {
     loading: authLoading,
     disconnect,
     getBirthdayHeight,
+    login,
   } = useAuth();
 
   const { searchBlockchain } = useZcashAPI();
@@ -128,6 +129,7 @@ const TransactionDetails = () => {
   );
   const [showKeyDialog, setShowKeyDialog] = useState(false);
   const [manualKey, setManualKey] = useState("");
+  const [manualBirthday, setManualBirthday] = useState("");
 
   useEffect(() => {
     const fetchTransaction = async () => {
@@ -181,75 +183,47 @@ const TransactionDetails = () => {
     return `${ago} (${date.toLocaleString()})`;
   };
 
-  const executeDecryption = async (keyToUse: string) => {
-    setIsDecrypting(true);
-    try {
-      // OPTIMIZATION: Check if we already have this transaction in our history
-      // This logic checks the globally loaded transactions first
-      if (transactions.length > 0) {
-        const found = transactions.find((t) => t.txid === txid);
-        if (found) {
-          console.log(
-            "[TransactionDetails] Found transaction in history cache! Skipping scan."
-          );
-          setDecryptedData({
-            amount: Math.abs(found.amount),
-            memo: found.memo || "",
-          } as any);
-          toast.success("Transaction decrypted successfully!");
-          setShowKeyDialog(false);
-          setIsDecrypting(false);
-          return;
-        }
+  // Watch for transaction in global context
+  useEffect(() => {
+    if (isDecrypting && transactions.length > 0) {
+      const found = transactions.find((t) => t.txid === txid);
+      if (found) {
+        console.log("[TransactionDetails] Transaction found via global sync!");
+        setDecryptedData({
+          amount: Math.abs(found.amount),
+          memo: found.memo || "",
+        } as any);
+        toast.success("Transaction decrypted successfully!");
+        setShowKeyDialog(false);
+        setIsDecrypting(false);
       }
-
-      const birthday = getBirthdayHeight();
-      // Use 'history' action to get both amount and memos
-      const response = await scanWallet(keyToUse, birthday, "history");
-
-      if (response.history) {
-        const tx = response.history.find((t) => t.txid === txid);
-        if (tx) {
-          setDecryptedData({
-            amount: tx.value / 100000000,
-            memo: tx.memos.join("\n") || "",
-          } as any);
-          toast.success("Transaction decrypted successfully!");
-        } else {
-          throw new Error(
-            "Transaction not found in history. Wallet might not be fully synced."
-          );
-        }
-      } else {
-        throw new Error("Scanner did not return history.");
-      }
-    } catch (err) {
-      console.error("Decryption failed:", err);
-      // Fallback or specific error handling
-      if (
-        err instanceof Error &&
-        err.message.includes("Scanner Server is not running")
-      ) {
-        toast.error(err.message);
-      } else {
-        toast.error(
-          "Failed to decrypt transaction. Ensure local scanner is running."
-        );
-      }
-    } finally {
-      setIsDecrypting(false);
-      setShowKeyDialog(false);
     }
-  };
+  }, [isDecrypting, transactions, txid]);
 
-  const handleDecrypt = async () => {
+  const handleDecrypt = () => {
     if (!txid) return;
 
+    // Check if we already have it in history (if connected)
+    if (transactions.length > 0) {
+      const found = transactions.find((t) => t.txid === txid);
+      if (found) {
+        setDecryptedData({
+          amount: Math.abs(found.amount),
+          memo: found.memo || "",
+        } as any);
+        toast.success("Transaction decrypted successfully!");
+        return;
+      }
+    }
+
     if (viewingKey) {
-      // Wallet connected, decrypt directly
-      executeDecryption(viewingKey);
+      // Connected but transaction not in list?
+      // Might be out of sync or stale.
+      // Trigger refresh?
+      toast.info(
+        "Transaction not found in current wallet history. Try refreshing."
+      );
     } else {
-      // Wallet not connected, ask for key
       setShowKeyDialog(true);
     }
   };
@@ -259,7 +233,15 @@ const TransactionDetails = () => {
       toast.error("Please enter a viewing key");
       return;
     }
-    executeDecryption(manualKey);
+
+    // 1. Log in with the key (starts background sync in Context)
+    const birthday = manualBirthday ? parseInt(manualBirthday) : undefined;
+    login(manualKey, birthday);
+
+    // 2. Set loading state to wait for sync
+    setIsDecrypting(true);
+    toast.info("Syncing wallet to find transaction... this may take a moment.");
+      
   };
 
   const hasShieldedActivity = (tx: TransactionDetails) => {
@@ -495,7 +477,7 @@ const TransactionDetails = () => {
                       Amount
                     </p>
                     <p className="text-2xl font-mono font-bold text-green-400">
-                      {decryptedData.amount.toFixed(8)} ZEC
+                      {formatZEC(decryptedData.amount)} ZEC
                     </p>
                   </div>
                   <div className="bg-black/40 p-4 rounded-lg border border-green-500/20">
@@ -598,7 +580,7 @@ const TransactionDetails = () => {
                     </span>
                     <div className="md:col-span-3 text-white font-mono text-sm">
                       {transaction.fee
-                        ? `${transaction.fee.toFixed(8)} ZEC`
+                        ? `${formatZEC(transaction.fee)} ZEC`
                         : "0.00000000 ZEC"}
                     </div>
                   </div>
@@ -610,7 +592,7 @@ const TransactionDetails = () => {
                     <div className="md:col-span-3 text-white font-mono text-sm font-bold">
                       {transaction.value !== undefined &&
                       transaction.value !== null
-                        ? `${transaction.value.toFixed(8)} ZEC`
+                        ? `${formatZEC(transaction.value)} ZEC`
                         : "0.00000000 ZEC"}
                     </div>
                   </div>
@@ -670,7 +652,7 @@ const TransactionDetails = () => {
                             {Number(transaction.valueBalanceOrchard) > 0
                               ? "+"
                               : ""}
-                            {Number(transaction.valueBalanceOrchard).toFixed(8)}{" "}
+                            {formatZEC(Number(transaction.valueBalanceOrchard))}{" "}
                             ZEC
                           </span>
                         </div>
@@ -798,7 +780,7 @@ const TransactionDetails = () => {
                   {/* Shielded Outputs (Sapling) */}
                   {transaction.vShieldedOutput?.map((output, i) => (
                     <div
-                      key={`sapling-out-${i}`}
+                      key={`sapling-output-${i}`}
                       className="p-4 flex items-center gap-3 group hover:bg-white/5 transition-colors"
                     >
                       <Shield className="w-5 h-5 text-purple-400" />
@@ -812,10 +794,10 @@ const TransactionDetails = () => {
                       </div>
                     </div>
                   ))}
-                  {/* Orchard Actions (Output side) */}
+                  {/* Shielded Outputs (Orchard) */}
                   {transaction.orchard?.actions?.map((action, i) => (
                     <div
-                      key={`orchard-out-${i}`}
+                      key={`orchard-output-${i}`}
                       className="p-4 flex items-center gap-3 group hover:bg-white/5 transition-colors"
                     >
                       <Shield className="w-5 h-5 text-purple-400" />
@@ -824,7 +806,7 @@ const TransactionDetails = () => {
                           (amount hidden)
                         </p>
                         <p className="text-xs text-gray-500 font-mono">
-                          Orchard Action
+                          Orchard Output
                         </p>
                       </div>
                     </div>
@@ -835,24 +817,33 @@ const TransactionDetails = () => {
                       key={`vout-${i}`}
                       className="p-4 flex justify-between group hover:bg-white/5 transition-colors"
                     >
-                      <div>
+                      <div className="min-w-0 flex-1 mr-4">
                         <div className="flex items-center gap-2 mb-1">
                           <Badge
                             variant="outline"
                             className="text-[10px] h-5 px-1 bg-transparent border-gray-700 text-gray-400"
                           >
-                            VOUT #{output.n}
+                            #{output.n}
                           </Badge>
-                          {output.scriptPubKey?.addresses?.[0] && (
-                            <span className="text-gray-400 text-sm font-mono truncate max-w-[150px]">
-                              {output.scriptPubKey.addresses[0].slice(0, 20)}...
+                          {output.scriptPubKey?.addresses?.[0] ? (
+                            <Link
+                              to={`/address/${output.scriptPubKey.addresses[0]}`}
+                              className="text-accent hover:underline text-sm truncate block font-mono"
+                            >
+                              {output.scriptPubKey.addresses[0]}
+                            </Link>
+                          ) : (
+                            <span className="text-gray-500 text-sm italic">
+                              OpReturn / Non-standard
                             </span>
                           )}
                         </div>
                       </div>
-                      <span className="text-white font-mono font-bold text-sm">
-                        {output.value.toFixed(8)} ZEC
-                      </span>
+                      <div className="text-right shrink-0">
+                        <div className="text-white font-mono font-bold text-sm">
+                          {formatZEC(output.value)} ZEC
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -860,52 +851,64 @@ const TransactionDetails = () => {
             </div>
           </div>
         ) : null}
-      </main>
 
-      <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
-        <DialogContent className="bg-[#1a1b26] border-gray-800 text-white sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-purple-400" />
-              Enter Viewing Key
-            </DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Your wallet is not connected. Please enter your Unified Viewing
-              Key (UFVK) to decrypt this transaction.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="viewing-key" className="text-gray-300">
-                Viewing Key
-              </Label>
-              <Input
-                id="viewing-key"
-                placeholder="uview..."
-                value={manualKey}
-                onChange={(e) => setManualKey(e.target.value)}
-                className="bg-black/40 border-gray-700 font-mono text-sm"
-              />
+        {/* Manual Key Dialog */}
+        <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
+          <DialogContent className="bg-[#1a1b26] border-purple-500/20 text-white">
+            <DialogHeader>
+              <DialogTitle>Enter View Key</DialogTitle>
+              <DialogDescription>
+                Please enter your Unified Viewing Key (UVK) to decrypt this
+                transaction.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="viewKey">Viewing Key</Label>
+                <Input
+                  id="viewKey"
+                  placeholder="uview..."
+                  value={manualKey}
+                  onChange={(e) => setManualKey(e.target.value)}
+                  className="bg-black/40 border-purple-500/20 font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="birthday">Birthday Height (Optional)</Label>
+                <Input
+                  id="birthday"
+                  type="number"
+                  placeholder="e.g. 2500000"
+                  value={manualBirthday}
+                  onChange={(e) => setManualBirthday(e.target.value)}
+                  className="bg-black/40 border-purple-500/20 font-mono text-sm"
+                />
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setShowKeyDialog(false)}
-              className="mr-2"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleManualDecrypt}
-              disabled={isDecrypting || !manualKey}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              {isDecrypting ? "Decrypting..." : "Decrypt"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowKeyDialog(false)}
+                className="border-gray-700 hover:bg-gray-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleManualDecrypt}
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={!manualKey || isDecrypting}
+              >
+                {isDecrypting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Unlock className="w-4 h-4 mr-2" />
+                )}
+                Decrypt
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </main>
     </div>
   );
 };

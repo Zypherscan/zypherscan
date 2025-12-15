@@ -113,20 +113,38 @@ export const generateAnalytics = (transactions: DecryptedTransaction[]) => {
     .reduce((acc, tx) => acc + Math.abs(tx.amount), 0);
 
   // Activity map for most active day
+  // Activity map for most active day (specific date)
   const activityMap = new Map<string, number>();
+  const dateObjMap = new Map<string, Date>();
+
   transactions.forEach((tx) => {
-    const date = tx.timestamp.toLocaleDateString(undefined, {
-      weekday: "long",
-    });
-    activityMap.set(date, (activityMap.get(date) || 0) + 1);
+    // Use toDateString for unique daily accounting (e.g., "Wed Dec 04 2025")
+    const dateKey = tx.timestamp.toDateString();
+    activityMap.set(dateKey, (activityMap.get(dateKey) || 0) + 1);
+    if (!dateObjMap.has(dateKey)) {
+      dateObjMap.set(dateKey, tx.timestamp);
+    }
   });
 
   let mostActiveDay = "N/A";
   let maxActivity = 0;
-  activityMap.forEach((count, day) => {
+
+  activityMap.forEach((count, key) => {
     if (count > maxActivity) {
       maxActivity = count;
-      mostActiveDay = day;
+      const dateObj = dateObjMap.get(key);
+      if (dateObj) {
+        // Format: "Wednesday (3 Dec 2025)"
+        const weekday = dateObj.toLocaleDateString(undefined, {
+          weekday: "long",
+        });
+        const datePart = dateObj.toLocaleDateString(undefined, {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+        mostActiveDay = `${weekday} (${datePart})`;
+      }
     }
   });
 
