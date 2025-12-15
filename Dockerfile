@@ -1,7 +1,10 @@
 # Multi-stage Dockerfile for ZypherScan
 # Stage 1: Build Rust scanner
-# REBUILD: 2025-12-15-04:38 - Force rebuild with Debian Bookworm for GLIBC 2.38
+# REBUILD: 2025-12-15-12:26 - Force complete rebuild
 FROM rust:latest as rust-builder
+
+# Build argument to force rebuild
+ARG CACHEBUST=2025-12-15-12:26
 
 # Install dependencies for Rust build
 RUN apt-get update && apt-get install -y \
@@ -16,7 +19,7 @@ COPY zypherscan-decrypt/Cargo.toml ./
 COPY zypherscan-decrypt/src ./src
 
 # Build Rust binary in release mode
-RUN cargo build --release
+RUN echo "Cache bust: $CACHEBUST" && cargo build --release
 
 # Stage 2: Build frontend
 FROM node:20-slim as frontend-builder
