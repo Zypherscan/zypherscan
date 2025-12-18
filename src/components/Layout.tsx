@@ -15,6 +15,7 @@ import {
   Settings,
   LayoutDashboard,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,20 +37,74 @@ interface LayoutProps {
 }
 
 export const Layout = ({ children }: LayoutProps) => {
-  const { isConnected, viewingKey, disconnect } = useAuth();
+  const { isConnected, viewingKey, disconnect, login } = useAuth();
   const { network, setNetwork } = useNetwork();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleConnect = async () => {
+    if (window.zucchini) {
+      try {
+        // 1. Establish connection
+        const connectResult = await window.zucchini.request({
+          method: "connect",
+          params: { permissions: ["view_keys"] },
+        });
+
+        // 2. Fetch the viewing key
+        const result = await window.zucchini.request({
+          method: "getUniversalViewingKey",
+        });
+
+        if (result) {
+          if (result.error) {
+            throw new Error(result.error);
+          }
+          // Handle both simple string response or object with viewingKey property
+          const key = typeof result === "string" ? result : result.viewingKey;
+
+          if (key) {
+            login(key, 3150000); // Using the user's preferred default
+            toast({
+              title: "Wallet Connected",
+              description: "Connected to Zucchini wallet successfully",
+            });
+            navigate("/dashboard");
+          }
+        }
+      } catch (error) {
+        console.error("Connection failed", error);
+        toast({
+          title: "Connection Failed",
+          description: "Could not connect to Zucchini wallet",
+          variant: "destructive",
+        });
+      }
+    } else {
+      navigate("/auth");
+    }
+    setIsMobileMenuOpen(false);
+  };
 
   const truncateKey = (key: string | null) => {
     if (!key) return "Connected";
     return `${key.slice(0, 8)}...${key.slice(-4)}`;
   };
 
-  const handleDisconnect = () => {
-    disconnect();
+  const handleDisconnect = async () => {
     navigate("/");
+
+    if (window.zucchini) {
+      try {
+        await window.zucchini.request({ method: "disconnect" });
+      } catch (e) {
+        console.warn("Failed to disconnect from Zucchini wallet:", e);
+      }
+    }
+
+    disconnect();
   };
 
   const isActive = (path: string) => {
@@ -175,15 +230,14 @@ export const Layout = ({ children }: LayoutProps) => {
                 </div>
               </div>
             ) : (
-              <Link to="/auth">
-                <Button
-                  size="sm"
-                  className="bg-accent/10 text-accent hover:bg-accent/20 border border-accent/20 h-9 px-4"
-                >
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Connect
-                </Button>
-              </Link>
+              <Button
+                size="sm"
+                onClick={handleConnect}
+                className="bg-accent/10 text-accent hover:bg-accent/20 border border-accent/20 h-9 px-4"
+              >
+                <Wallet className="w-4 h-4 mr-2" />
+                Connect
+              </Button>
             )}
           </nav>
 
@@ -353,12 +407,13 @@ export const Layout = ({ children }: LayoutProps) => {
                       </Button>
                     </div>
                   ) : (
-                    <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                        <Wallet className="w-4 h-4 mr-2" />
-                        Connect
-                      </Button>
-                    </Link>
+                    <Button
+                      className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={handleConnect}
+                    >
+                      <Wallet className="w-4 h-4 mr-2" />
+                      Connect
+                    </Button>
                   )}
                 </div>
               </div>

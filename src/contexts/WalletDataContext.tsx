@@ -146,7 +146,8 @@ export function WalletDataProvider({
         );
 
         // 1. Initialize Scanner Session
-        await initScanner(viewingKey, birthday);
+        // Use provided birthday height if available, otherwise default logic inside initScanner
+        await initScanner(viewingKey, birthday || undefined);
 
         // 2. Start Sync
         await startSync();
