@@ -94,10 +94,10 @@ async function apiClient<T>(
 }
 
 // 1. Init Viewing key
-export async function initScanner(uvk: string, birthday: number) {
+export async function initScanner(uvk: string, birthday?: number) {
   const response = await apiClient<{ session_id: string }>("/init", "POST", {
     uvk,
-    birthday,
+    birthday: birthday ?? 3150000, // Default to 3150000 if not provided
   });
   if (response && response.session_id) {
     currentSessionId = response.session_id;
