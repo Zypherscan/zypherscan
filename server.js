@@ -45,7 +45,9 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
         const fetch = (await import('node-fetch')).default;
         
         const headers = { ...req.headers };
-        // Update host header
+
+        delete headers['content-length'];
+
         try {
             headers['host'] = new URL(cleanTarget).host;
         } catch (e) {
@@ -63,8 +65,6 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
 
         // Forward body if not GET/HEAD
         if (!['GET', 'HEAD'].includes(req.method)) {
-             // Since we used express.json(), req.body is an object.
-             // We need to stringify it back to JSON.
             fetchOptions.body = JSON.stringify(req.body);
         }
 
@@ -91,6 +91,12 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
 // --- Proxy Routes ---
 
 // 1. Zypher Backend
+// Special handling for auth routes to ensure they hit /auth/... at root, not /api/api/auth/...
+const BACKEND_ROOT = (process.env.VITE_BACKEND_API || "").replace(/\/api\/?$/, "");
+app.use('/api/zypher/auth', createProxyHandler(`${BACKEND_ROOT}/auth`, {
+    apiKey: process.env.VITE_BACKEND_API_KEY
+}));
+
 app.use('/api/zypher', createProxyHandler(process.env.VITE_BACKEND_API, { 
     apiKey: process.env.VITE_BACKEND_API_KEY 
 }));
@@ -103,7 +109,11 @@ app.use('/api-testnet', createProxyHandler(TESTNET_API));
 const ZEBRA_API = (process.env.VITE_ZEBRA_RPC_URL || "").trim();
 app.use('/zebra', createProxyHandler(ZEBRA_API));
 
-// 4. Mainnet API (Must be after /api/zypher to avoid catching it if /api logic was broad, but /api/zypher is explicit)
+// 4. CoinGecko Proxy
+const COINGECKO_API = "https://api.coingecko.com/api/v3";
+app.use('/coingecko', createProxyHandler(COINGECKO_API));
+
+// 5. Mainnet API (Must be after /api/zypher to avoid catching it if /api logic was broad, but /api/zypher is explicit)
 const MAINNET_API = normalizeApiUrl(process.env.VITE_MAINNET_RPC_API_URL);
 app.use('/api', createProxyHandler(MAINNET_API));
 

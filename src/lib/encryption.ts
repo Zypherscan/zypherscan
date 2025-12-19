@@ -15,7 +15,6 @@ export function performClientEncryption(
   const iv = forge.random.getBytesSync(12);
 
   // 2. Encrypt UVK with AES-GCM
-  // Note: forge.cipher.createCipher('AES-GCM', ...) expects the key as a binary string/buffer
   const cipher = forge.cipher.createCipher("AES-GCM", aesKey);
   cipher.start({
     iv: iv,
@@ -28,13 +27,15 @@ export function performClientEncryption(
   const tag = cipher.mode.tag.getBytes();
 
   // Rust aes-gcm expects Ciphertext + Tag concated
+  // forge string concatenation of binary strings works, but let's be explicit
   const combined = encryptedUvk + tag;
   const finalEncryptedUvk = forge.util.encode64(combined);
 
-  // 3. Encrypt AES Key with RSA
+  // 3. Encrypt AES Key with RSA (OAEP SHA-256)
   const publicKey = forge.pki.publicKeyFromPem(serverPublicKeyPem);
-  // encrypt method defaults to RSAES-PKCS1-V1_5 which matches Node's RSA_PKCS1_PADDING
-  const encryptedKey = publicKey.encrypt(aesKey);
+  const encryptedKey = publicKey.encrypt(aesKey, "RSA-OAEP", {
+    md: forge.md.sha256.create(),
+  });
   const finalEncryptedKey = forge.util.encode64(encryptedKey);
 
   // 4. Encode IV

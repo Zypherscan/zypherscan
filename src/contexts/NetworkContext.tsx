@@ -6,6 +6,7 @@ interface NetworkContextType {
   network: NetworkType;
   setNetwork: (network: NetworkType) => void;
   apiBase: string; // The base URL for API calls corresponding to the network
+  zecPrice: { usd: number; change24h: number } | null;
 }
 
 const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
@@ -45,9 +46,40 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
   // Testnet uses /api-testnet (proxied to api.testnet...)
   const apiBase = network === "mainnet" ? "/api" : "/api-testnet";
 
+  // Global ZEC Price State (Fetched once, updated every 30s)
+  const [zecPrice, setZecPrice] = useState<{
+    usd: number;
+    change24h: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        // Use the proxy endpoint to avoid CORS
+        const response = await fetch(
+          "/coingecko/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true"
+        );
+        if (!response.ok) return; // Silent fail
+        const data = await response.json();
+        if (data.zcash) {
+          setZecPrice({
+            usd: data.zcash.usd,
+            change24h: data.zcash.usd_24h_change,
+          });
+        }
+      } catch (error) {
+        console.error("Global price fetch failed", error);
+      }
+    };
+
+    fetchPrice(); // Initial fetch
+    const interval = setInterval(fetchPrice, 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <NetworkContext.Provider
-      value={{ network, setNetwork: handleSetNetwork, apiBase }}
+      value={{ network, setNetwork: handleSetNetwork, apiBase, zecPrice }}
     >
       {children}
     </NetworkContext.Provider>

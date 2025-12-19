@@ -25,12 +25,15 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Proxy to Railway Backend directly
         // Vite server (Node.js) adds the API key, so it's not visible in browser dev tools
-        "/api/zypher": {
-          target: env.VITE_BACKEND_API,
+        // Special proxy for /auth/key to ensure it hits root /auth/key, not /api/auth/key
+        // This handles cases where VITE_BACKEND_API might include /api
+        "^/api/zypher/auth/key": {
+          target: (env.VITE_BACKEND_API || "").replace(/\/api\/?$/, ""),
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/zypher/, ""),
+          rewrite: () => "/auth/key",
           configure: (proxy, _options) => {
             proxy.on("proxyReq", (proxyReq, _req, _res) => {
+              // Add API key if needed, though usually pub key is open
               const apiKey = env.VITE_BACKEND_API_KEY || "";
               if (apiKey) {
                 proxyReq.setHeader("x-api-key", apiKey);
@@ -38,7 +41,32 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
+        "/api/zypher": {
+          target: env.VITE_BACKEND_API,
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api\/zypher/, ""),
+          configure: (proxy, _options) => {
+            proxy.on("proxyReq", (proxyReq, req, _res) => {
+              console.log(
+                `[Proxy] ${req.method} ${req.url} -> ${proxyReq.path}`
+              );
+              const apiKey = env.VITE_BACKEND_API_KEY || "";
+              if (apiKey) {
+                proxyReq.setHeader("x-api-key", apiKey);
+              }
+            });
+            proxy.on("error", (err, _req, _res) => {
+              console.error("[Proxy Error]", err);
+            });
+          },
+        },
         // External API proxies
+        "/coingecko": {
+          target: "https://api.coingecko.com/api/v3",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/coingecko/, ""),
+        },
         "/api-testnet": {
           target: TESTNET_API,
           changeOrigin: true,
