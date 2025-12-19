@@ -1,3 +1,5 @@
+import { performClientEncryption } from "./encryption";
+
 export const API_BASE = "/api/zypher";
 
 export interface ScannerBalances {
@@ -95,8 +97,25 @@ async function apiClient<T>(
 
 // 1. Init Viewing key
 export async function initScanner(uvk: string, birthday?: number) {
-  const response = await apiClient<{ session_id: string }>("/init", "POST", {
+  // A. Fetch Public Key
+  // We explicitly fetch text here since apiClient is designed for JSON
+  const keyResponse = await fetch(`${API_BASE}/auth/key`);
+  if (!keyResponse.ok) {
+    throw new Error(`Failed to fetch public key: ${keyResponse.status}`);
+  }
+  const publicKey = await keyResponse.text();
+
+  // B. Encrypt
+  const { encrypted_uvk, encrypted_key, iv } = performClientEncryption(
     uvk,
+    publicKey
+  );
+
+  // C. Send Hybrid Encrypted Payload
+  const response = await apiClient<{ session_id: string }>("/init", "POST", {
+    encrypted_uvk,
+    encrypted_key,
+    iv,
     birthday: birthday ?? 3150000, // Default to 3150000 if not provided
   });
   if (response && response.session_id) {
