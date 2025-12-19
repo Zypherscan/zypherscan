@@ -26,7 +26,6 @@ const normalizeApiUrl = (url) => {
 };
 
 // Generic Proxy Handler
-// Generic Proxy Handler
 const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => {
     if (!targetBaseUrl) {
         console.error(`Target URL not configured for ${req.baseUrl}`);
@@ -41,11 +40,7 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
 
         // Remove headers that might cause issues with upstream APIs
         delete headers['content-length'];
-        delete headers['origin'];
-        delete headers['referer'];
-        delete headers['host']; // We set this explicitly below
-
-        // Set Host header
+        
         try {
             headers['host'] = new URL(cleanTarget).host;
         } catch (e) {

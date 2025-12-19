@@ -71,7 +71,11 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
             });
           }
         } else {
-          console.warn("Global price fetch received non-JSON response");
+          const text = await response.text();
+          console.warn(
+            "Global price fetch received non-JSON response:",
+            text.substring(0, 200)
+          );
         }
       } catch (error) {
         console.error("Global price fetch failed", error);
