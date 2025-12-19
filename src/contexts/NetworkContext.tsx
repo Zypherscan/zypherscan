@@ -55,27 +55,17 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const fetchPrice = async () => {
       try {
-        // Use the proxy endpoint to avoid CORS
         const response = await fetch(
-          "/coingecko/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true"
+          "https://api.coingecko.com/api/v3/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true"
         );
         if (!response.ok) return; // Silent fail
 
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const data = await response.json();
-          if (data.zcash) {
-            setZecPrice({
-              usd: data.zcash.usd,
-              change24h: data.zcash.usd_24h_change,
-            });
-          }
-        } else {
-          const text = await response.text();
-          console.warn(
-            "Global price fetch received non-JSON response:",
-            text.substring(0, 200)
-          );
+        const data = await response.json();
+        if (data.zcash) {
+          setZecPrice({
+            usd: data.zcash.usd,
+            change24h: data.zcash.usd_24h_change,
+          });
         }
       } catch (error) {
         console.error("Global price fetch failed", error);
@@ -83,7 +73,7 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     fetchPrice(); // Initial fetch
-    const interval = setInterval(fetchPrice, 30000); // Poll every 30s
+    const interval = setInterval(fetchPrice, 5000); // Poll every 5s
     return () => clearInterval(interval);
   }, []);
 

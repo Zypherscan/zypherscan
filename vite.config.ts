@@ -59,11 +59,6 @@ export default defineConfig(({ mode }) => {
           },
         },
         // External API proxies
-        "/coingecko": {
-          target: "https://api.coingecko.com/api/v3",
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/coingecko/, ""),
-        },
         "/api-testnet": {
           target: TESTNET_API,
           changeOrigin: true,
