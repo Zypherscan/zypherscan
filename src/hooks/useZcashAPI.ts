@@ -405,7 +405,6 @@ export const useZcashAPI = () => {
 
       // Fallback: Zebra RPC for Mempool transactions not yet in Cipherscan
       if (!t) {
-        console.log("Transaction not in Scan API, trying Zebra RPC...");
         try {
           t = await fetchRPC("getrawtransaction", [query, 1]);
         } catch (e) {

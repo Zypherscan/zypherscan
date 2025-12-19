@@ -48,9 +48,6 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/api\/zypher/, ""),
           configure: (proxy, _options) => {
             proxy.on("proxyReq", (proxyReq, req, _res) => {
-              console.log(
-                `[Proxy] ${req.method} ${req.url} -> ${proxyReq.path}`
-              );
               const apiKey = env.VITE_BACKEND_API_KEY || "";
               if (apiKey) {
                 proxyReq.setHeader("x-api-key", apiKey);

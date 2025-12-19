@@ -39,8 +39,6 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
     const cleanTarget = targetBaseUrl.replace(/\/$/, "");
     const targetUrl = `${cleanTarget}${req.url}`;
     
-    // console.log(`[Proxy] ${req.method} ${req.originalUrl} -> ${targetUrl}`);
-    
     try {
         const fetch = (await import('node-fetch')).default;
         

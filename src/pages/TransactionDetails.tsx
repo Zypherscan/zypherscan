@@ -188,7 +188,6 @@ const TransactionDetails = () => {
     if (isDecrypting && transactions.length > 0) {
       const found = transactions.find((t) => t.txid === txid);
       if (found) {
-        console.log("[TransactionDetails] Transaction found via global sync!");
         setDecryptedData({
           amount: Math.abs(found.amount),
           memo: found.memo || "",
