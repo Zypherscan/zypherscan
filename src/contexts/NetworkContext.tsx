@@ -60,12 +60,18 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
           "/coingecko/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true"
         );
         if (!response.ok) return; // Silent fail
-        const data = await response.json();
-        if (data.zcash) {
-          setZecPrice({
-            usd: data.zcash.usd,
-            change24h: data.zcash.usd_24h_change,
-          });
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+          if (data.zcash) {
+            setZecPrice({
+              usd: data.zcash.usd,
+              change24h: data.zcash.usd_24h_change,
+            });
+          }
+        } else {
+          console.warn("Global price fetch received non-JSON response");
         }
       } catch (error) {
         console.error("Global price fetch failed", error);

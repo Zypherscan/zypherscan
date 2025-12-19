@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fetch from 'node-fetch';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,31 +26,30 @@ const normalizeApiUrl = (url) => {
 };
 
 // Generic Proxy Handler
+// Generic Proxy Handler
 const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => {
     if (!targetBaseUrl) {
         console.error(`Target URL not configured for ${req.baseUrl}`);
-        // If it's an API call, return JSON error. If it's navigation, might break, but this is an API proxy.
-        // Returning 502 Bad Gateway is appropriate for missing upstream config.
         return res.status(502).json({ error: 'Upstream configuration missing' });
     }
 
-    // req.url in app.use middleware is the path relative to the mount point
-    // e.g., if mounted at /zebra, request /zebra/foo -> req.url = /foo
-    // Ensure targetBaseUrl doesn't have trailing slash to avoid double slashes
     const cleanTarget = targetBaseUrl.replace(/\/$/, "");
     const targetUrl = `${cleanTarget}${req.url}`;
     
     try {
-        const fetch = (await import('node-fetch')).default;
-        
         const headers = { ...req.headers };
 
+        // Remove headers that might cause issues with upstream APIs
         delete headers['content-length'];
+        delete headers['origin'];
+        delete headers['referer'];
+        delete headers['host']; // We set this explicitly below
 
+        // Set Host header
         try {
             headers['host'] = new URL(cleanTarget).host;
         } catch (e) {
-            // Ignore URL parse error if target is weird, but it shouldn't be
+            // Should not happen with valid URL
         }
         
         if (options.apiKey) {
@@ -61,7 +61,6 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
             headers: headers,
         };
 
-        // Forward body if not GET/HEAD
         if (!['GET', 'HEAD'].includes(req.method)) {
             fetchOptions.body = JSON.stringify(req.body);
         }
@@ -73,7 +72,10 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
 
         // Forward headers
         response.headers.forEach((value, key) => {
-            res.setHeader(key, value);
+             // Avoid setting content-encoding/length to let Node handle it or because we buffer
+            if (key !== 'content-encoding' && key !== 'content-length') {
+                res.setHeader(key, value);
+            }
         });
 
         // Forward body
@@ -82,7 +84,9 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
 
     } catch (error) {
         console.error(`[Proxy] Error proxying to ${targetUrl}:`, error);
-        res.status(500).json({ error: 'Proxy request failed' });
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Proxy request failed' });
+        }
     }
 };
 
