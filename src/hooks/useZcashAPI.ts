@@ -341,7 +341,28 @@ export const useZcashAPI = () => {
   );
 
   const searchBlockchain = useCallback(async (query: string) => {
-    // 1. Try as Block Height
+    // 1. Try as Address
+    // Transparent (t1...), Sapling (zs...), Unified (u1...)
+    if (
+      query.startsWith("t1") ||
+      query.startsWith("t3") ||
+      query.startsWith("zs") ||
+      query.startsWith("u1")
+    ) {
+      const addr = await fetchCipherscan(`/address/${query}`);
+      if (addr && !addr.error) {
+        return {
+          success: true,
+          type: "address",
+          result: {
+            address: query,
+            ...addr,
+          },
+        };
+      }
+    }
+
+    // 2. Try as Block Height
     if (/^\d+$/.test(query)) {
       const b = await fetchCipherscan(`/block/${query}`);
       if (b) {
@@ -370,7 +391,7 @@ export const useZcashAPI = () => {
       }
     }
 
-    // 2. Try as Block Hash or Transaction ID (both 64 chars)
+    // 3. Try as Block Hash or Transaction ID (both 64 chars)
     if (query.length === 64) {
       // A. Try Block Hash
       const b = await fetchCipherscan(`/block/${query}`);
@@ -497,6 +518,10 @@ export const useZcashAPI = () => {
 
   const getBlockchainInfo = getNetworkStatus;
 
+  const getAddressDetails = useCallback(async (address: string) => {
+    return await fetchCipherscan(`/address/${address}`);
+  }, []);
+
   return {
     getLatestBlocks,
     searchBlockchain,
@@ -506,5 +531,6 @@ export const useZcashAPI = () => {
     getRecentShieldedTransactions,
     getPrivacyStats,
     getZecPrice,
+    getAddressDetails,
   };
 };

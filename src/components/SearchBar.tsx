@@ -8,10 +8,13 @@ import { useToast } from "@/hooks/use-toast";
 
 interface SearchBarProps {
   variant?: "default" | "header";
-  setIsMobileMenuOpen?: any
+  setIsMobileMenuOpen?: any;
 }
 
-export const SearchBar = ({ variant = "default", setIsMobileMenuOpen }: SearchBarProps) => {
+export const SearchBar = ({
+  variant = "default",
+  setIsMobileMenuOpen,
+}: SearchBarProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const { searchBlockchain } = useZcashAPI();
@@ -45,13 +48,20 @@ export const SearchBar = ({ variant = "default", setIsMobileMenuOpen }: SearchBa
             title: "Transaction Found",
             description: `Navigating to transaction details`,
           });
+        } else if (result.type === "address") {
+          // Navigate to address details page
+          navigate(`/address/${result.result.address}`);
+          toast({
+            title: "Address Found",
+            description: `Navigating to address details`,
+          });
         }
         setSearchQuery("");
       } else {
         toast({
           title: "Not Found",
           description:
-            "No results found for this query. Try a block height, block hash, or transaction ID.",
+            "No results found for this query. Try a block height, block hash, transaction ID, or address.",
           variant: "destructive",
         });
       }
@@ -83,8 +93,8 @@ export const SearchBar = ({ variant = "default", setIsMobileMenuOpen }: SearchBa
           type="text"
           placeholder={
             isHeader
-              ? "Search block / tx..."
-              : "Search by block height, block hash, or transaction ID..."
+              ? "Search block / tx / addr..."
+              : "Search by block height, block hash, transaction ID, or address..."
           }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -116,8 +126,8 @@ export const SearchBar = ({ variant = "default", setIsMobileMenuOpen }: SearchBa
       </div>
       {!isHeader && (
         <p className="text-center text-xs text-muted-foreground mt-3">
-          Enter a block height (e.g., 2500000), block hash, or transaction ID to
-          search
+          Enter a block height (e.g., 2500000), block hash, transaction ID, or
+          address to search
         </p>
       )}
     </form>
