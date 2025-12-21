@@ -122,7 +122,7 @@ export const Layout = ({ children }: LayoutProps) => {
           <button className="text-[11px] text-accent tracking-wider font-medium hover:text-accent/80 transition-colors uppercase flex items-center gap-1.5 text-center leading-tight md:leading-normal">
             <span>
               Enjoying Zypherscan? <br className="md:hidden" />
-              Help us staying afloat / maintain the server!
+              <u>Help us</u> staying afloat / maintain the server!
             </span>
             <GiReceiveMoney className="w-3.5 h-3.5 flex-shrink-0" />
           </button>
