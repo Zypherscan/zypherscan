@@ -119,7 +119,7 @@ export const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-[#0a0e13] text-foreground font-sans flex flex-col">
       <div className="w-full bg-accent/10 border-b border-accent/20 py-1.5 flex justify-center items-center">
         <SupportDialog>
-          <button className="text-[11px] text-accent tracking-wider font-medium hover:text-accent/80 transition-colors uppercase flex items-center gap-1.5 text-center leading-tight md:leading-normal">
+          <button className="text-[11px] text-accent tracking-wider font-medium hover:text-accent/80 transition-colors flex items-center gap-1.5 text-center leading-tight md:leading-normal">
             <span>
               Enjoying Zypherscan? <br className="md:hidden" />
               <u>Help us</u> Keep this service alive!
