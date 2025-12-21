@@ -1,5 +1,5 @@
 /**
- * Zcash Network Configuration
+ * ZCash Network Configuration
  * Adapted from CipherScan for zypherscan
  * Provides network detection and RPC configuration
  */

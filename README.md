@@ -1,21 +1,46 @@
-# ZypherScan - Zcash Block Explorer & Decryption Tool
+# Zypherscan - Privacy-First ZCash Explorer
 
-ZypherScan is a modern, privacy-focused Zcash block explorer and transaction analyzer. It serves as a frontend interface allowing users to view blockchain data and decrypt shielded transactions using Unified Viewing Keys (UVKs).
+**Zypherscan** is a modern, privacy-first blockchain explorer and shielded wallet companion for **ZCash**. It bridges the gap between public blockchain data and private user activity, allowing users to "unlock" and view their own **shielded transaction history**, balances, and encrypted memos using **Unified Viewing Keys (UVKs)** in a safe, view-only environment.
 
-## 🏗️ Architecture
+## 🌟 Core Features
 
-This repository contains the **Frontend Application** built with:
+### 1. Advanced Blockchain Explorer
+
+- **Network Intelligence:** Real-time visibility into blocks, transactions, mempool size, and network statistics.
+- **Transaction Analysis:** Detailed breakdown of transaction types with visual badges:
+  - 🛡️ **Fully Shielded (z-to-z)**
+  - 🔓 **Deshielding (z-to-t)**
+  - 🔒 **Shielding (t-to-z)**
+  - 🧊 **Transparent (t-to-t)**
+- **Shielded Support:** Native support for viewing complex shielded pools (Orchard actions, Sapling spends/outputs).
+
+### 2. Shielded Wallet Integration
+
+- **Connect via View Key:** Users can connect using a Unified Viewing Key (UVK) to permit the application to scan the chain for their specific data without exposing spending keys.
+- **Zucchini Wallet Support:** Built-in integration to auto-connect with the Zucchini browser wallet.
+- **Private Dashboard:**
+  - Aggregated balances (Total, Shielded, Transparent).
+  - Decryptable transaction history with historical pricing.
+  - Activity charts and usage analytics.
+- **Decrypt Tool:** A dedicated utility for manually decrypting specific transaction outputs and memos.
+
+## 🏗️ Technical Architecture
+
+### Frontend
 
 - **Framework:** React + Vite
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS + Shadcn UI
-- **Server:** Node.js (Express) for serving static assets and proxying API requests in production.
+- **Styling:** Tailwind CSS + Radix UI (shadcn/ui) for a "Cyberpunk/Terminal" aesthetic.
+- **State Management:** React Context (`WalletDataContext`, `AuthContext`) for global syncing state.
 
-It is designed to connect to external services:
+### Backend & Data
 
-1. **ZypherScan Backend:** A Rust-based scanner service for wallet synchronization and decryption.
-2. **Cipherscan APIs:** For public blockchain data access (Mainnet/Testnet).
-3. **Zebra/Lightwalletd:** For RPC and light client data.
+- **Server:** Node.js (Express) acting as a unified proxy server (`server.js`).
+- **Data Handling:**
+  - **Proxy Layer:** Securely routes traffic to external services (`lightwalletd`, Zypher backend, Zebra nodes) to handle CORS and API tokens.
+  - **Server-Side Scanning:** The heavy lifting of trial-decrypting the blockchain occurs on a trusted backend service via the `/api/zypher` proxy.
+  - **Local Storage:** Session keys are stored locally in the browser for persistence across reloads.
+- **WASM Roadmap:** Contains foundational code for future client-side WebAssembly decryption (`lib/wasm`).
 
 ## 🚀 Quick Start
 
@@ -35,7 +60,7 @@ It is designed to connect to external services:
    ```
 
 2. **Configure environment:**
-   Create a `.env` file (copy from `.env.example` if available) and configure your API endpoints:
+   Create a `.env` file (copy from `.env.example`) and configure your API endpoints:
 
    ```env
    PORT=3000
@@ -58,9 +83,7 @@ It is designed to connect to external services:
 
 ## 🐳 Docker Deployment
 
-The project includes a production-ready `Dockerfile` and `docker-compose.yml`.
-
-### Build & Run
+The project serves both the React frontend and the Express proxy via a single image.
 
 ```bash
 docker-compose up -d --build
@@ -68,55 +91,12 @@ docker-compose up -d --build
 
 Access the application at `http://localhost:3000`.
 
-## 🎯 Key Features
+## 🔒 Privacy & Security Model
 
-### 🔐 Secure Authentication & Decryption
-
-- **Unified Viewing Keys (UVKs):** Users authenticate using their UVKs.
-- **Network Validation:** The app strictly validates keys against the selected network (`uview`/`zview` for Mainnet, `utest`/`ztest` for Testnet).
-- **Security:** Private keys are never required. Viewing keys are stored locally for the session and cleared on logout/network switch.
-
-### 🌐 Multi-Network Support
-
-Seamlessly switch between **Mainnet** and **Testnet** via the header menu.
-
-| Feature             | 🟢 Mainnet                                   | 🟡 Testnet                    |
-| :------------------ | :------------------------------------------- | :---------------------------- |
-| **Dashboard**       | ✅ Full Access (Analytics, History, Balance) | ❌ Disabled (Stability Focus) |
-| **Background Sync** | ✅ Continuous                                | ❌ Disabled                   |
-| **Decryption**      | ✅ Auto & Manual                             | ✅ Manual (Single TX Only)    |
-| **Public Explorer** | ✅ Blocks, Txs, Addresses                    | ✅ Blocks, Txs, Addresses     |
-
-### 📊 Dashboard (Mainnet)
-
-- **Real-time Sync:** Connects to the backend scanner to fetch and decrypt transaction history in the background.
-- **Analytics:** View "Most Active Days", portfolio distribution (Orchard, Sapling, Transparent), and total transaction counts.
-- **Sync Status:** Visual indicator of block scanning progress.
-
-### 🔍 Transaction Details
-
-- **Decryption:** Manually decrypt specific shielded transactions if you possess the viewing key.
-- **Testnet Mode:** On Testnet, use the "Decrypt This TX" button on the Details page to perform a one-off local decryption probe without full wallet sync.
-
-## 📁 Project Structure
-
-```
-zypherscan/
-This application supports both Zcash Mainnet and Testnet, with specific feature availability for each:
-
-### 🟢 Mainnet
-
-- **Full Dashboard Access**: View complete transaction history, balance summaries, and analytics.
-- **Background Sync**: The application continuously syncs your viewing key in the background to keep data fresh.
-- **Decryption**: Decrypt incoming and outgoing shielded transactions.
-
-### 🟡 Testnet
-
-- **Transaction Decryption Only**: You can decrypt individual transactions directly on the Transaction Details page using a Testnet Viewing Key.
-- **No Dashboard**: To ensure stability and focus on specific debugging, the full dashboard and background sync are **disabled** for Testnet.
-- **Usage**: Switch to "Testnet" in the header, navigate to a transaction, and click "Decrypt This TX".
+- **View-Only Access:** The application only requires **viewing keys**, never spending keys. It cannot move funds.
+- **Server-Side Trust:** Currently, the application relies on the configured backend service to perform decryption. Keys are transmitted securely to this endpoint for scanning purposes.
+- **Data Persistence:** Keys depend on browser Local Storage and are cleared upon disconnection.
 
 ## 📄 License
 
 MIT
-```

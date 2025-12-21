@@ -522,6 +522,33 @@ export const useZcashAPI = () => {
     return await fetchCipherscan(`/address/${address}`);
   }, []);
 
+  const decodeUnifiedAddress = useCallback(async (address: string) => {
+    try {
+      const apiUrl = import.meta.env.VITE_BACKEND_API;
+      const apiKey = import.meta.env.VITE_BACKEND_API_KEY;
+
+      if (!apiUrl) {
+        console.warn("VITE_BACKEND_API not set");
+        return null;
+      }
+
+      const response = await fetch(
+        `${apiUrl}/address/decode?address=${address}`,
+        {
+          headers: {
+            "x-api-key": apiKey || "",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (e) {
+      console.error("Failed to decode unified address:", e);
+      return null;
+    }
+  }, []);
+
   return {
     getLatestBlocks,
     searchBlockchain,
@@ -532,5 +559,6 @@ export const useZcashAPI = () => {
     getPrivacyStats,
     getZecPrice,
     getAddressDetails,
+    decodeUnifiedAddress,
   };
 };

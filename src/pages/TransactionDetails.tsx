@@ -241,7 +241,6 @@ const TransactionDetails = () => {
     // 2. Set loading state to wait for sync
     setIsDecrypting(true);
     toast.info("Syncing wallet to find transaction... this may take a moment.");
-      
   };
 
   const hasShieldedActivity = (tx: TransactionDetails) => {
