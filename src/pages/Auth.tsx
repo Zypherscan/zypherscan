@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { parseViewingKey } from "@/lib/zcash-crypto";
 import { useNetwork } from "@/contexts/NetworkContext";
 
-// Zcash unified viewing key validation (starts with 'uview' for mainnet)
+// ZCash unified viewing key validation (starts with 'uview' for mainnet)
 const viewingKeySchema = z
   .string()
   .min(100, "Viewing key is too short")

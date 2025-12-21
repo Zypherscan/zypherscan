@@ -47,7 +47,7 @@ const RecentBlocks = () => {
           Recent Blocks
         </h1>
         <p className="text-muted-foreground">
-          The latest blocks mined on the Zcash network.
+          The latest blocks mined on the ZCash network.
         </p>
       </div>
 

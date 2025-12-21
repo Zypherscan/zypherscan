@@ -175,9 +175,14 @@ export function WalletDataProvider({
                 // Let's rely on percent_scanned for the bar.
               }
 
-              // If the API provides block info in different fields, map them here
-              // specific for your API response structure:
-              // { status: "complete", blocks_scanned: 0, percent_scanned: 100.0, ... }
+              // Check for not_running status indicating session death
+              if (status.status === "not_running") {
+                console.warn(
+                  "Scanner unexpectedly stopped. Reloading to restart session..."
+                );
+                window.location.reload();
+                return;
+              }
 
               if (status.status === "error" || status.error) {
                 console.error("Sync error:", status.error);

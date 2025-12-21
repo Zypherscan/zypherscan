@@ -2,20 +2,15 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useZcashAPI, ShieldedTransaction } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
   Shield,
-  Activity,
   TrendingUp,
-  TrendingDown,
   Layers,
   Lock,
   Eye,
   PieChart,
-  ArrowUpRight,
   ArrowLeft,
   ArrowRight,
   Zap,
@@ -177,11 +172,11 @@ const PrivacyDashboard = () => {
           <div className="flex items-center justify-center gap-2 mb-2">
             <Shield className="w-8 h-8 text-accent" />
             <h1 className="text-3xl font-bold tracking-tight">
-              Zcash Privacy Metrics
+              ZCash Privacy Metrics
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Live privacy statistics for the Zcash blockchain. Track shielded
+            Live privacy statistics for the ZCash blockchain. Track shielded
             adoption, privacy score, and transparency trends.
           </p>
         </div>
