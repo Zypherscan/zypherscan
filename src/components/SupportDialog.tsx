@@ -106,7 +106,7 @@ export const SupportDialog = ({ children }: SupportDialogProps) => {
           </div>
           <div className="w-full space-y-2">
             <p className="text-xs text-center text-muted-foreground uppercase tracking-wider font-semibold">
-              Only Zcash Unified Address
+              Donation Address (Unified & Shielded)
             </p>
             <button
               onClick={() =>
