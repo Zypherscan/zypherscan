@@ -1,3 +1,5 @@
+import { performClientEncryption } from "./encryption";
+
 export const API_BASE = "/api/zypher";
 
 export interface ScannerBalances {
@@ -95,13 +97,34 @@ async function apiClient<T>(
 
 // 1. Init Viewing key
 export async function initScanner(uvk: string, birthday?: number) {
-  const response = await apiClient<{ session_id: string }>("/init", "POST", {
+  // A. Fetch Public Key
+  const keyResponse = await fetch(`${API_BASE}/auth/key`);
+  if (!keyResponse.ok) {
+    console.error(
+      `[Scanner API] Failed to fetch public key: ${keyResponse.status}`
+    );
+    throw new Error(`Failed to fetch public key: ${keyResponse.status}`);
+  }
+  const keyData = await keyResponse.json();
+  const publicKey = keyData.public_key;
+
+
+  // B. Encrypt
+  const { encrypted_uvk, encrypted_key, iv } = performClientEncryption(
     uvk,
-    birthday: birthday ?? 3150000, // Default to 3150000 if not provided
+    publicKey
+  );
+
+  // C. Send Hybrid Encrypted Payload
+  const response = await apiClient<{ session_id: string }>("/init", "POST", {
+    encrypted_uvk,
+    encrypted_key,
+    iv,
+    birthday: birthday ?? 3150000,
   });
+
   if (response && response.session_id) {
     currentSessionId = response.session_id;
-    console.log("[Scanner API] Initialized session:", currentSessionId);
   }
   return response;
 }

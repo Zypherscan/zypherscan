@@ -63,9 +63,6 @@ const DecryptTool = () => {
     if (transactions.length > 0) {
       const found = transactions.find((t) => t.txid === txid);
       if (found) {
-        console.log(
-          "[DecryptTool] Found transaction in history cache! Skipping scan."
-        );
         setResult({
           memo: found.memo || "No memo found.",
           amount: Math.abs(found.amount),
@@ -101,9 +98,6 @@ const DecryptTool = () => {
           return;
         }
       } catch (e) {
-        console.log(
-          "Transaction not found in index, trying memo specific endpoint..."
-        );
       }
 
       // Fallback to getMemo if getTransaction fails

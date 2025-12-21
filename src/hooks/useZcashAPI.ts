@@ -126,7 +126,7 @@ const CIPHERSCAN_API_BASE = "/api";
 import { useNetwork } from "@/contexts/NetworkContext";
 
 export const useZcashAPI = () => {
-  const { apiBase } = useNetwork();
+  const { apiBase, zecPrice } = useNetwork();
 
   // Helper for fetching from Cipherscan
   const fetchCipherscan = async (endpoint: string) => {
@@ -426,7 +426,6 @@ export const useZcashAPI = () => {
 
       // Fallback: Zebra RPC for Mempool transactions not yet in Cipherscan
       if (!t) {
-        console.log("Transaction not in Scan API, trying Zebra RPC...");
         try {
           t = await fetchRPC("getrawtransaction", [query, 1]);
         } catch (e) {
@@ -500,21 +499,14 @@ export const useZcashAPI = () => {
   }, []);
 
   const getZecPrice = useCallback(async (): Promise<ZecPrice | null> => {
-    try {
-      const response = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true"
-      );
-      if (!response.ok) throw new Error("CoinGecko API error");
-      const data = await response.json();
+    if (zecPrice) {
       return {
-        usd: data.zcash.usd,
-        usd_24h_change: data.zcash.usd_24h_change,
+        usd: zecPrice.usd,
+        usd_24h_change: zecPrice.change24h,
       };
-    } catch (err) {
-      console.error("ZEC price fetch failed:", err);
-      return null;
     }
-  }, []);
+    return null;
+  }, [zecPrice]);
 
   const getBlockchainInfo = getNetworkStatus;
 
