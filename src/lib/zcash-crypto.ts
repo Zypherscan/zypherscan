@@ -1,4 +1,4 @@
-// Utility types and functions for Zcash wallet data
+// Utility types and functions for ZCash wallet data
 export interface DecryptedTransaction {
   txid: string;
   timestamp: Date;
@@ -12,7 +12,8 @@ export interface DecryptedTransaction {
   confirmations?: number;
 }
 
-export const formatZEC = (value: number): string => {
+export const formatZEC = (value: number | undefined | null): string => {
+  if (value === undefined || value === null) return "0.00";
   // Assuming input is already in ZEC units (e.g. 1.25)
   return value.toLocaleString(undefined, {
     minimumFractionDigits: 2,

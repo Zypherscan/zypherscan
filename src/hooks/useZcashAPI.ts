@@ -126,7 +126,7 @@ const CIPHERSCAN_API_BASE = "/api";
 import { useNetwork } from "@/contexts/NetworkContext";
 
 export const useZcashAPI = () => {
-  const { apiBase } = useNetwork();
+  const { apiBase, zecPrice } = useNetwork();
 
   // Helper for fetching from Cipherscan
   const fetchCipherscan = async (endpoint: string) => {
@@ -341,7 +341,28 @@ export const useZcashAPI = () => {
   );
 
   const searchBlockchain = useCallback(async (query: string) => {
-    // 1. Try as Block Height
+    // 1. Try as Address
+    // Transparent (t1...), Sapling (zs...), Unified (u1...)
+    if (
+      query.startsWith("t1") ||
+      query.startsWith("t3") ||
+      query.startsWith("zs") ||
+      query.startsWith("u1")
+    ) {
+      const addr = await fetchCipherscan(`/address/${query}`);
+      if (addr && !addr.error) {
+        return {
+          success: true,
+          type: "address",
+          result: {
+            address: query,
+            ...addr,
+          },
+        };
+      }
+    }
+
+    // 2. Try as Block Height
     if (/^\d+$/.test(query)) {
       const b = await fetchCipherscan(`/block/${query}`);
       if (b) {
@@ -370,7 +391,7 @@ export const useZcashAPI = () => {
       }
     }
 
-    // 2. Try as Block Hash or Transaction ID (both 64 chars)
+    // 3. Try as Block Hash or Transaction ID (both 64 chars)
     if (query.length === 64) {
       // A. Try Block Hash
       const b = await fetchCipherscan(`/block/${query}`);
@@ -405,7 +426,6 @@ export const useZcashAPI = () => {
 
       // Fallback: Zebra RPC for Mempool transactions not yet in Cipherscan
       if (!t) {
-        console.log("Transaction not in Scan API, trying Zebra RPC...");
         try {
           t = await fetchRPC("getrawtransaction", [query, 1]);
         } catch (e) {
@@ -479,23 +499,47 @@ export const useZcashAPI = () => {
   }, []);
 
   const getZecPrice = useCallback(async (): Promise<ZecPrice | null> => {
-    try {
-      const response = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true"
-      );
-      if (!response.ok) throw new Error("CoinGecko API error");
-      const data = await response.json();
+    if (zecPrice) {
       return {
-        usd: data.zcash.usd,
-        usd_24h_change: data.zcash.usd_24h_change,
+        usd: zecPrice.usd,
+        usd_24h_change: zecPrice.change24h,
       };
-    } catch (err) {
-      console.error("ZEC price fetch failed:", err);
+    }
+    return null;
+  }, [zecPrice]);
+
+  const getBlockchainInfo = getNetworkStatus;
+
+  const getAddressDetails = useCallback(async (address: string) => {
+    return await fetchCipherscan(`/address/${address}`);
+  }, []);
+
+  const decodeUnifiedAddress = useCallback(async (address: string) => {
+    try {
+      const apiUrl = import.meta.env.VITE_BACKEND_API;
+      const apiKey = import.meta.env.VITE_BACKEND_API_KEY;
+
+      if (!apiUrl) {
+        console.warn("VITE_BACKEND_API not set");
+        return null;
+      }
+
+      const response = await fetch(
+        `${apiUrl}/address/decode?address=${address}`,
+        {
+          headers: {
+            "x-api-key": apiKey || "",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (e) {
+      console.error("Failed to decode unified address:", e);
       return null;
     }
   }, []);
-
-  const getBlockchainInfo = getNetworkStatus;
 
   return {
     getLatestBlocks,
@@ -506,5 +550,7 @@ export const useZcashAPI = () => {
     getRecentShieldedTransactions,
     getPrivacyStats,
     getZecPrice,
+    getAddressDetails,
+    decodeUnifiedAddress,
   };
 };

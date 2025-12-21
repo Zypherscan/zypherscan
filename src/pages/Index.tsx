@@ -3,7 +3,6 @@ import { SearchBar } from "@/components/SearchBar";
 import { RecentBlocks } from "@/components/RecentBlocks";
 import { ShieldedActivityList } from "@/components/ShieldedActivityList";
 import { MarketStatsBanner } from "@/components/MarketStatsBanner";
-import { Button } from "@/components/ui/button";
 import { Shield, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
@@ -53,18 +52,13 @@ const Index = () => {
             </span>
             <span className="w-2 h-2 bg-terminal-green rounded-full animate-pulse" />
           </div>
-
           <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
-            Explore Zcash
+            Explore ZCash
             <br />
             <span className="text-gradient glow-text">With Full Privacy</span>
           </h1>
-
-          <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto animate-fade-in">
-            Bring your own viewing keys. Decrypt shielded transactions
-            client-side. Your privacy stays on your device, not our servers.
-          </p>
-
+          Bring your own viewing keys to unlock shielded transactions. A
+          seamless, view-only explorer for your private ZCash history.
           <div className="max-w-xl mx-auto pt-4 animate-fade-in">
             <SearchBar />
           </div>

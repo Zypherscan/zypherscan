@@ -1,7 +1,7 @@
 /**
  * Application configuration
  *
- * These settings control connections to Zcash infrastructure
+ * These settings control connections to ZCash infrastructure
  */
 
 export const config = {

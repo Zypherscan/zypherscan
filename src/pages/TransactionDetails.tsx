@@ -188,7 +188,6 @@ const TransactionDetails = () => {
     if (isDecrypting && transactions.length > 0) {
       const found = transactions.find((t) => t.txid === txid);
       if (found) {
-        console.log("[TransactionDetails] Transaction found via global sync!");
         setDecryptedData({
           amount: Math.abs(found.amount),
           memo: found.memo || "",
@@ -241,7 +240,6 @@ const TransactionDetails = () => {
     // 2. Set loading state to wait for sync
     setIsDecrypting(true);
     toast.info("Syncing wallet to find transaction... this may take a moment.");
-      
   };
 
   const hasShieldedActivity = (tx: TransactionDetails) => {

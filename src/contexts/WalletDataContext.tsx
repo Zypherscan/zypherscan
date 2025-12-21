@@ -139,11 +139,6 @@ export function WalletDataProvider({
 
       try {
         const birthday = getBirthdayHeight();
-        console.log(
-          `[WalletContext] Starting ${
-            isBackground ? "background" : "initial"
-          } scan...`
-        );
 
         // 1. Initialize Scanner Session
         // Use provided birthday height if available, otherwise default logic inside initScanner
@@ -180,9 +175,14 @@ export function WalletDataProvider({
                 // Let's rely on percent_scanned for the bar.
               }
 
-              // If the API provides block info in different fields, map them here
-              // specific for your API response structure:
-              // { status: "complete", blocks_scanned: 0, percent_scanned: 100.0, ... }
+              // Check for not_running status indicating session death
+              if (status.status === "not_running") {
+                console.warn(
+                  "Scanner unexpectedly stopped. Reloading to restart session..."
+                );
+                window.location.reload();
+                return;
+              }
 
               if (status.status === "error" || status.error) {
                 console.error("Sync error:", status.error);
@@ -201,7 +201,6 @@ export function WalletDataProvider({
 
         // 3. Get Overview Data
         const response = await getOverview();
-        console.log("[WalletContext] Overview Response:", response);
 
         let newBalance: WalletBalance | null = null;
         if (response && response.balances) {
@@ -358,11 +357,6 @@ export function WalletDataProvider({
             const diff = now.getTime() - lastUpdateDate.getTime();
             if (diff < 2 * 60 * 1000) {
               shouldSync = false;
-              console.log(
-                `[WalletContext] Cache is fresh (${Math.round(
-                  diff / 1000
-                )}s old). Skipping initial background sync.`
-              );
             }
           }
 
@@ -375,9 +369,6 @@ export function WalletDataProvider({
 
       if (loadedFromCache) {
         if (shouldSync) {
-          console.log(
-            "[WalletContext] Cache loaded but stale, starting background sync..."
-          );
           loadWalletData(true);
         }
       } else {
@@ -412,7 +403,6 @@ export function WalletDataProvider({
     // Initial load handled by separate effect.
     // This interval just keeps it fresh.
     const interval = setInterval(() => {
-      console.log("[WalletContext] Triggering automatic background sync...");
       loadWalletData(true);
     }, 2 * 60 * 1000); // 2 minutes
 

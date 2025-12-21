@@ -154,7 +154,7 @@ const Dashboard = () => {
               <h1 className="text-3xl font-bold">Privacy Dashboard</h1>
             </div>
             <p className="text-muted-foreground">
-              Your shielded transaction activity, decrypted client-side
+              Your shielded transaction activity, unlocked with your viewing key
             </p>
           </div>
           <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
