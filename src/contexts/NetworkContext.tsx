@@ -56,12 +56,7 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
     const fetchPrice = async () => {
       try {
         const response = await fetch(
-          "https://pro-api.coingecko.com/api/v3/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true",
-          {
-            headers: {
-              "x-cg-pro-api-key": import.meta.env.VITE_COINGECKO_API_KEY || "",
-            },
-          }
+          "/coingecko/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true"
         );
         if (!response.ok) return; // Silent fail
 

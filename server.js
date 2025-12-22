@@ -48,7 +48,7 @@ const createProxyHandler = (targetBaseUrl, options = {}) => async (req, res) => 
         }
         
         if (options.apiKey) {
-            headers['x-api-key'] = options.apiKey;
+            headers[options.apiKeyHeader || 'x-api-key'] = options.apiKey;
         }
 
         const fetchOptions = {
@@ -107,7 +107,10 @@ const ZEBRA_API = (process.env.VITE_ZEBRA_RPC_URL || "").trim();
 app.use('/zebra', createProxyHandler(ZEBRA_API));
 
 // 4. CoinGecko Proxy
-// Removed in favor of client-side fetch
+app.use('/coingecko', createProxyHandler('https://pro-api.coingecko.com/api/v3', {
+    apiKey: process.env.VITE_COINGECKO_API_KEY,
+    apiKeyHeader: 'x-cg-pro-api-key'
+}));
 
 // 5. Mainnet API (Must be after /api/zypher to avoid catching it if /api logic was broad, but /api/zypher is explicit)
 const MAINNET_API = normalizeApiUrl(process.env.VITE_MAINNET_RPC_API_URL);
