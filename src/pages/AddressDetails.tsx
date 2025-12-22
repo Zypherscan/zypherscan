@@ -83,10 +83,7 @@ const AddressDetails = () => {
       setError(null);
 
       try {
-        const promises: Promise<any>[] = [
-          getAddressDetails(address),
-          getZecPrice(),
-        ];
+        const promises: Promise<any>[] = [getAddressDetails(address)];
 
         // If Unified Address, try to decode it
         if (address.startsWith("u1") || address.startsWith("utest")) {
@@ -95,8 +92,7 @@ const AddressDetails = () => {
 
         const results = await Promise.all(promises);
         const addrData = results[0];
-        const priceData = results[1];
-        const decodeData = results[2]; // Might be undefined if not UA
+        const decodeData = results.length > 1 ? results[1] : undefined;
 
         if (decodeData) {
           setDecodedUA(decodeData);
@@ -155,10 +151,6 @@ const AddressDetails = () => {
             setError("Address not found or invalid");
           }
         }
-
-        if (priceData) {
-          setZecPrice(priceData.usd);
-        }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Failed to load address details"
@@ -169,7 +161,21 @@ const AddressDetails = () => {
     };
 
     fetchDetails();
-  }, [address, getAddressDetails, getZecPrice, decodeUnifiedAddress]);
+  }, [address, getAddressDetails, decodeUnifiedAddress]);
+
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        const priceData = await getZecPrice();
+        if (priceData) {
+          setZecPrice(priceData.usd);
+        }
+      } catch (err) {
+        console.error("Failed to fetch ZEC price:", err);
+      }
+    };
+    fetchPrice();
+  }, [getZecPrice]);
 
   const handleCopyAddress = async () => {
     if (!address) return;
@@ -443,7 +449,8 @@ const AddressDetails = () => {
                       </h3>
                       <p className="text-sm text-gray-400 mb-4">
                         Use your Unified Full Viewing Key (UFVK) to decrypt
-                        transactions sent to this address to unlock shielded Transactions.
+                        transactions sent to this address to unlock shielded
+                        Transactions.
                       </p>
                     </div>
 

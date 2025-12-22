@@ -56,7 +56,12 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
     const fetchPrice = async () => {
       try {
         const response = await fetch(
-          "https://api.coingecko.com/api/v3/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true"
+          "https://pro-api.coingecko.com/api/v3/simple/price?ids=zcash&vs_currencies=usd&include_24hr_change=true",
+          {
+            headers: {
+              "x-cg-pro-api-key": import.meta.env.VITE_COINGECKO_API_KEY || "",
+            },
+          }
         );
         if (!response.ok) return; // Silent fail
 
@@ -73,7 +78,7 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     fetchPrice(); // Initial fetch
-    const interval = setInterval(fetchPrice, 5000); // Poll every 5s
+    const interval = setInterval(fetchPrice, 60000); // Poll every 60s
     return () => clearInterval(interval);
   }, []);
 
