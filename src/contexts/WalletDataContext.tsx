@@ -252,8 +252,9 @@ export function WalletDataProvider({
                     : "",
                 type: isIncoming ? "incoming" : "outgoing",
                 pool: "orchard", // Default to orchard/shielded
-                height: 0,
+                block_number: r.block_number,
                 fee: r.fee ? r.fee / 100000000 : 0,
+                confirmations: r.confirmations,
               };
             }
           );
