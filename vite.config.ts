@@ -58,6 +58,19 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
+        "/coingecko": {
+          target: "https://pro-api.coingecko.com/api/v3",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/coingecko/, ""),
+          configure: (proxy, _options) => {
+            proxy.on("proxyReq", (proxyReq, _req, _res) => {
+              const apiKey = env.VITE_COINGECKO_API_KEY || "";
+              if (apiKey) {
+                proxyReq.setHeader("x-cg-pro-api-key", apiKey);
+              }
+            });
+          },
+        },
         // External API proxies
         "/api-testnet": {
           target: TESTNET_API,
