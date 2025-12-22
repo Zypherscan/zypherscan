@@ -6,7 +6,7 @@ export interface DecryptedTransaction {
   memo?: string;
   type: "incoming" | "outgoing" | "internal";
   pool?: "sapling" | "orchard" | "transparent";
-  height: number;
+  block_number: number;
   address?: string;
   fee?: number;
   confirmations?: number;

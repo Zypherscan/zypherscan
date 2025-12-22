@@ -305,7 +305,9 @@ export function TransactionList({ transactions }: TransactionListProps) {
                         Block Height
                       </span>
                       <span className="font-mono text-sm">
-                        {tx.height.toLocaleString()}
+                        {tx.block_number
+                          ? tx.block_number.toLocaleString()
+                          : "N/A"}
                       </span>
                     </div>
 

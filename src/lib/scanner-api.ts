@@ -15,6 +15,8 @@ export interface ScannerTxReport {
   value: number;
   fee?: number;
   memos: (string | Record<string, any>)[];
+  block_number: number;
+  confirmations?: number;
 }
 
 export interface ScannerAnalysis {
@@ -107,7 +109,6 @@ export async function initScanner(uvk: string, birthday?: number) {
   }
   const keyData = await keyResponse.json();
   const publicKey = keyData.public_key;
-
 
   // B. Encrypt
   const { encrypted_uvk, encrypted_key, iv } = performClientEncryption(
