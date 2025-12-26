@@ -108,6 +108,9 @@ export const SupportDialog = ({ children }: SupportDialogProps) => {
             <p className="text-xs text-center text-muted-foreground uppercase tracking-wider font-semibold">
               Donation Address (Unified & Shielded)
             </p>
+            <p className="text-xs text-center text-muted-foreground uppercase tracking-wider font-semibold text-red-500">
+              ⚠️Send only Zcash ($ZEC) to this address. Sending other assets may result in permanent loss.
+            </p>
             <button
               onClick={() =>
                 handleCopyAddress(
