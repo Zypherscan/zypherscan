@@ -136,7 +136,7 @@ export const ShieldedActivityList = () => {
           size="sm"
           onClick={() => fetchTxs(true)}
           disabled={refreshing}
-          className="border-accent/30"
+          className="border-accent/30 text-foreground"
         >
           <RefreshCw
             className={`w-4 h-4 mr-2 ${refreshing ? "animate-spin" : ""}`}

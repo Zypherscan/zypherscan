@@ -33,6 +33,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNetwork } from "@/contexts/NetworkContext";
 import { GiReceiveMoney } from "react-icons/gi";
 import { SupportDialog } from "@/components/SupportDialog";
+import { ModeToggle } from "@/components/mode-toggle";
 
 interface LayoutProps {
   children: ReactNode;
@@ -116,7 +117,7 @@ export const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0e13] text-foreground font-sans flex flex-col">
+    <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
       <div className="w-full bg-accent/10 border-b border-accent/20 py-1.5 flex justify-center items-center">
         <SupportDialog>
           <button className="text-[11px] text-accent tracking-wider font-medium hover:text-accent/80 transition-colors flex items-center gap-1.5 text-center leading-tight md:leading-normal">
@@ -128,7 +129,7 @@ export const Layout = ({ children }: LayoutProps) => {
           </button>
         </SupportDialog>
       </div>
-      <header className="sticky top-0 z-50 border-b border-border/20 bg-[#0a0e13]/95 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-border/20 bg-background/95 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center gap-6">
@@ -159,7 +160,7 @@ export const Layout = ({ children }: LayoutProps) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="bg-[#12171d] border-border/20"
+                className="bg-popover border-border/20"
               >
                 <DropdownMenuItem onClick={() => setNetwork("mainnet")}>
                   <div className="flex items-center gap-2">
@@ -195,7 +196,7 @@ export const Layout = ({ children }: LayoutProps) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="bg-[#12171d] border-border/20"
+                className="bg-popover border-border/20"
               >
                 <DropdownMenuItem onClick={() => navigate("/mempool")}>
                   Mempool
@@ -214,6 +215,8 @@ export const Layout = ({ children }: LayoutProps) => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <ModeToggle />
 
             {isConnected ? (
               <div className="flex items-center gap-4">
@@ -263,20 +266,23 @@ export const Layout = ({ children }: LayoutProps) => {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[300px] sm:w-[400px] border-l border-border/20 bg-[#0a0e13] p-0"
+              className="w-[300px] sm:w-[400px] border-l border-border/20 bg-background p-0"
             >
               <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
-              <div className="flex flex-col h-full bg-[#0a0e13]">
+              <div className="flex flex-col h-full bg-background">
                 <div className="p-6 border-b border-border/10">
                   <div className="flex items-center gap-2 mb-6">
                     <img src="/logo.png" alt="Logo" className="w-8 h-8" />
-                    <span className="text-xl font-bold tracking-wide text-foreground">
+                    <span className="text-xl font-bold tracking-wide text-foreground flex-1">
                       ZYPHERSCAN
                     </span>
+                    <div className="md:hidden">
+                      <ModeToggle />
+                    </div>
                   </div>
 
                   {/* Network Selector Mobile */}
-                  <div className="flex bg-[#12171d] rounded-lg p-1 border border-border/20 mb-4">
+                  <div className="flex bg-muted/50 rounded-lg p-1 border border-border/20 mb-4">
                     <button
                       onClick={() => setNetwork("mainnet")}
                       className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-sm font-medium transition-all ${
@@ -387,7 +393,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   </div>
                 </ScrollArea>
 
-                <div className="p-6 border-t border-border/10 bg-[#12171d]/50">
+                <div className="p-6 border-t border-border/10 bg-muted/20">
                   {isConnected ? (
                     <div className="space-y-4">
                       <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/5 border border-accent/10">

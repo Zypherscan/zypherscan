@@ -184,29 +184,29 @@ const PrivacyDashboard = () => {
         {/* Top Section: Score & Recent TXs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Privacy Score Card */}
-          <Card className="lg:col-span-1 bg-[#1a1b26] border-accents/20 p-8 flex flex-col justify-center items-center text-center relative overflow-hidden">
+          <Card className="lg:col-span-1 bg-card border-border p-8 flex flex-col justify-center items-center text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-accent opacity-50"></div>
             <div className="z-10 w-full">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Shield className="w-5 h-5 text-gray-400" />
-                <h3 className="text-gray-400 font-medium tracking-wide text-sm uppercase">
+                <Shield className="w-5 h-5 text-muted-foreground" />
+                <h3 className="text-muted-foreground font-medium tracking-wide text-sm uppercase">
                   Privacy Score
                 </h3>
               </div>
 
-              <div className="text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-400 mb-2 font-mono">
+              <div className="text-7xl font-bold mb-2 font-mono text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-br dark:from-white dark:to-gray-400">
                 {stats?.metrics?.privacyScore || 0}
-                <span className="text-2xl text-gray-500">/100</span>
+                <span className="text-2xl text-muted-foreground">/100</span>
               </div>
 
-              <div className="w-full max-w-[200px] h-2 bg-gray-800 rounded-full mx-auto mb-6 overflow-hidden">
+              <div className="w-full max-w-[200px] h-2 bg-muted rounded-full mx-auto mb-6 overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-1000"
                   style={{ width: `${stats?.metrics?.privacyScore || 0}%` }}
                 ></div>
               </div>
 
-              <p className="text-xs text-gray-500 max-w-[250px] mx-auto">
+              <p className="text-xs text-muted-foreground max-w-[250px] mx-auto">
                 Shielded Tx Adoption ({shieldedTxPercentage.toFixed(0)}%), Fully
                 Shielded Rate ({fullyShieldedPercentage.toFixed(0)}%), Pool Size
                 Growtth
@@ -217,63 +217,63 @@ const PrivacyDashboard = () => {
           </Card>
 
           {/* Recent Shielded Transactions */}
-          <Card className="lg:col-span-2 bg-[#1a1b26] border-accents/20 p-0 overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+          <Card className="lg:col-span-2 bg-card border-border p-0 overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-purple-400" />
-                <h3 className="font-medium text-gray-200">
+                <h3 className="font-medium text-foreground">
                   Recent Shielded TXs
                 </h3>
               </div>
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                 LIVE
               </div>
             </div>
-            <div className="divide-y divide-gray-800/50 flex-1">
+            <div className="divide-y divide-border/50 flex-1">
               {recentTxs.length > 0 ? (
                 recentTxs.map((tx) => (
                   <div
                     key={tx.txid}
-                    className="p-4 hover:bg-white/5 transition-colors group flex items-center justify-between"
+                    className="p-4 hover:bg-muted/50 transition-colors group flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
                         <Lock className="w-4 h-4 text-purple-400" />
                       </div>
                       <div className="max-w-[180px] sm:max-w-xs">
                         <Link
                           to={`/tx/${tx.txid}`}
-                          className="text-sm font-mono text-purple-300 hover:text-purple-200 block truncate"
+                          className="text-sm font-mono text-purple-600 dark:text-purple-300 hover:text-purple-500 block truncate"
                         >
                           {tx.txid}
                         </Link>
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                           <span>
                             Block: #{tx.block_height || (tx as any).blockHeight}
                           </span>
-                          <span className="text-gray-700 mx-1">•</span>
+                          <span className="text-gray-500 mx-1">•</span>
                           <Badge
                             variant="secondary"
-                            className="text-[10px] h-4 px-1.5 bg-gray-800 text-gray-400"
+                            className="text-[10px] h-4 px-1.5 bg-muted text-muted-foreground"
                           >
                             {tx.pool?.toUpperCase() || "SHIELDED"}
                           </Badge>
                         </div>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 font-mono text-right">
+                    <div className="text-xs text-muted-foreground font-mono text-right">
                       {handleTimestamp(tx)}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-gray-500 text-sm">
+                <div className="p-8 text-center text-muted-foreground text-sm">
                   Loading recent transactions...
                 </div>
               )}
             </div>
-            <div className="p-3 bg-gray-900/50 text-center border-t border-gray-800">
+            <div className="p-3 bg-muted/30 text-center border-t border-border">
               <Link
                 to="/blocks"
                 className="text-xs text-purple-400 hover:text-purple-300 inline-flex items-center gap-1 transition-colors"
@@ -286,26 +286,26 @@ const PrivacyDashboard = () => {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-[#1a1b26] border-gray-800 p-5">
-            <div className="flex items-center gap-2 mb-1 text-xs text-gray-400 uppercase tracking-wider">
+          <Card className="bg-card border-border p-5">
+            <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase tracking-wider">
               <Lock className="w-3 h-3" /> Shielded TX %
             </div>
-            <div className="text-2xl font-bold text-white mb-1">
+            <div className="text-2xl font-bold text-foreground mb-1">
               {shieldedTxPercentage.toFixed(1)}%
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {(stats?.totals?.shieldedTx || 0).toLocaleString()} txs
             </p>
           </Card>
 
-          <Card className="bg-[#1a1b26] border-gray-800 p-5">
-            <div className="flex items-center gap-2 mb-1 text-xs text-gray-400 uppercase tracking-wider">
+          <Card className="bg-card border-border p-5">
+            <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase tracking-wider">
               <PieChart className="w-3 h-3" /> Supply Shielded
             </div>
             <div className="text-2xl font-bold text-purple-400 mb-1">
               {supplyShieldedPercentage.toFixed(1)}%
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               {blockchainInfo?.supply?.totalShielded
                 ? `${(blockchainInfo.supply.totalShielded / 1000000).toFixed(
                     2
@@ -314,81 +314,84 @@ const PrivacyDashboard = () => {
             </p>
           </Card>
 
-          <Card className="bg-[#1a1b26] border-gray-800 p-5">
-            <div className="flex items-center gap-2 mb-1 text-xs text-gray-400 uppercase tracking-wider">
+          <Card className="bg-card border-border p-5">
+            <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase tracking-wider">
               <TrendingUp className="w-3 h-3" /> Adoption Trend
             </div>
-            <div className="text-2xl font-bold text-white mb-1">
+            <div className="text-2xl font-bold text-foreground mb-1">
               {isTrendUp ? "Rising" : "Declining"}
             </div>
-            <p className="text-xs text-gray-500">30 Day Avg</p>
+            <p className="text-xs text-muted-foreground">30 Day Avg</p>
           </Card>
 
-          <Card className="bg-[#1a1b26] border-gray-800 p-5">
-            <div className="flex items-center gap-2 mb-1 text-xs text-gray-400 uppercase tracking-wider">
+          <Card className="bg-card border-border p-5">
+            <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase tracking-wider">
               <Eye className="w-3 h-3" /> Fully Shielded
             </div>
             <div className="text-2xl font-bold text-green-400 mb-1">
               {(stats?.totals?.fullyShieldedTx || 0).toLocaleString()}
             </div>
-            <p className="text-xs text-gray-500">Fully Private Transactions</p>
+            <p className="text-xs text-muted-foreground">
+              Fully Private Transactions
+            </p>
           </Card>
         </div>
 
         {/* Transaction Types & Pool Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Transaction Types */}
-          <Card className="bg-[#1a1b26] border-gray-800 p-6">
-            <h3 className="text-sm font-medium text-gray-200 mb-6 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-gray-400" /> Transaction Types
+          <Card className="bg-card border-border p-6">
+            <h3 className="text-sm font-medium text-foreground mb-6 flex items-center gap-2">
+              <Layers className="w-4 h-4 text-muted-foreground" /> Transaction
+              Types
             </h3>
 
             <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-purple-300 flex items-center gap-2">
+                  <span className="text-purple-500 flex items-center gap-2">
                     <Lock className="w-3 h-3" /> Shielded (
                     {(stats?.totals?.shieldedTx || 0).toLocaleString()})
                   </span>
-                  <span className="text-white font-mono">
+                  <span className="text-foreground font-mono">
                     {shieldedTxPercentage.toFixed(1)}%
                   </span>
                 </div>
                 <Progress
                   value={shieldedTxPercentage}
-                  className="h-2 bg-gray-800"
+                  className="h-2 bg-muted"
                   indicatorClassName="bg-purple-500"
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400 flex items-center gap-2">
+                  <span className="text-muted-foreground flex items-center gap-2">
                     <Eye className="w-3 h-3" /> Transparent (
                     {(stats?.totals?.transparentTx || 0).toLocaleString()})
                   </span>
-                  <span className="text-white font-mono">
+                  <span className="text-foreground font-mono">
                     {(100 - shieldedTxPercentage).toFixed(1)}%
                   </span>
                 </div>
                 <Progress
                   value={100 - shieldedTxPercentage}
-                  className="h-2 bg-gray-800"
-                  indicatorClassName="bg-gray-600"
+                  className="h-2 bg-muted"
+                  indicatorClassName="bg-gray-500"
                 />
               </div>
             </div>
           </Card>
 
           {/* Shielded Pool Breakdown */}
-          <Card className="bg-[#1a1b26] border-gray-800 p-6">
-            <h3 className="text-sm font-medium text-gray-200 mb-6 flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-gray-400" /> Shielded Pool
-              Breakdown
+          <Card className="bg-card border-border p-6">
+            <h3 className="text-sm font-medium text-foreground mb-6 flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-muted-foreground" /> Shielded
+              Pool Breakdown
             </h3>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-900/30 border border-gray-800">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-purple-500"></div>
                   <span className="text-sm text-purple-400 font-medium">
@@ -396,7 +399,7 @@ const PrivacyDashboard = () => {
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-mono text-white">
+                  <div className="text-sm font-mono text-foreground">
                     {((blockchainInfo?.supply?.sapling || 0) / 1000000).toFixed(
                       2
                     )}
@@ -405,7 +408,7 @@ const PrivacyDashboard = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-900/30 border border-gray-800">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                   <span className="text-sm text-yellow-500 font-medium">
@@ -413,7 +416,7 @@ const PrivacyDashboard = () => {
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-mono text-white">
+                  <div className="text-sm font-mono text-foreground">
                     {((blockchainInfo?.supply?.sprout || 0) / 1000000).toFixed(
                       3
                     )}
@@ -422,7 +425,7 @@ const PrivacyDashboard = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-900/30 border border-gray-800">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
                   <span className="text-sm text-green-500 font-medium">
@@ -430,7 +433,7 @@ const PrivacyDashboard = () => {
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-mono text-white">
+                  <div className="text-sm font-mono text-foreground">
                     {((blockchainInfo?.supply?.orchard || 0) / 1000000).toFixed(
                       3
                     )}
@@ -439,9 +442,11 @@ const PrivacyDashboard = () => {
                 </div>
               </div>
 
-              <div className="border-t border-gray-800 pt-3 flex justify-between items-center px-3">
-                <span className="text-sm text-gray-400">Total Shielded</span>
-                <span className="text-sm font-bold text-white font-mono">
+              <div className="border-t border-border pt-3 flex justify-between items-center px-3">
+                <span className="text-sm text-muted-foreground">
+                  Total Shielded
+                </span>
+                <span className="text-sm font-bold text-foreground font-mono">
                   {(
                     (blockchainInfo?.supply?.totalShielded || 0) / 1000000
                   ).toFixed(2)}
@@ -453,14 +458,14 @@ const PrivacyDashboard = () => {
         </div>
 
         {/* Adoption Chart */}
-        <Card className="bg-[#1a1b26] border-gray-800 p-6">
+        <Card className="bg-card border-border p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-accent" />
                 Adoption Trend
               </h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Shielded transaction percentage over time
               </p>
             </div>
