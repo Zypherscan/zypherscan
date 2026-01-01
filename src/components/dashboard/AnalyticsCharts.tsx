@@ -44,8 +44,8 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-[#1a1f2e] border border-accent/20 rounded-lg p-3 shadow-xl">
-          <p className="font-medium mb-2 text-foreground">{label}</p>
+        <div className="bg-popover border border-border rounded-lg p-3 shadow-xl">
+          <p className="font-medium mb-2 text-popover-foreground">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {entry.value.toFixed(4)} ZEC

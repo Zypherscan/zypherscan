@@ -324,7 +324,7 @@ const BlockDetails = () => {
                       <ArrowLeft className="w-6 h-6" />
                     </button>
                   )}
-                  <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+                  <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                     <span className="text-gray-500 text-2xl">#</span>
                     {block.height.toLocaleString()}
                   </h1>
@@ -340,14 +340,14 @@ const BlockDetails = () => {
             </div>
 
             {/* Block Details Card */}
-            <Card className="bg-[#0f1016] border-gray-800 p-0 overflow-hidden">
+            <Card className="bg-card border-border p-0 overflow-hidden">
               <div className="p-6 space-y-6">
                 {/* Timestamp */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
                   <span className="text-gray-400 text-sm flex items-center gap-2">
                     <Clock className="w-4 h-4" /> Timestamp
                   </span>
-                  <div className="md:col-span-3 text-white text-sm">
+                  <div className="md:col-span-3 text-foreground text-sm">
                     {formatTimestamp(block.timestamp)}
                   </div>
                 </div>
@@ -386,7 +386,7 @@ const BlockDetails = () => {
                   <span className="text-gray-400 text-sm flex items-center gap-2">
                     <Box className="w-4 h-4" /> Block Size
                   </span>
-                  <div className="md:col-span-3 text-white text-sm">
+                  <div className="md:col-span-3 text-foreground text-sm">
                     {block.size
                       ? `${(block.size / 1024).toFixed(2)} KB`
                       : "N/A"}
@@ -398,7 +398,7 @@ const BlockDetails = () => {
                   <span className="text-gray-400 text-sm flex items-center gap-2">
                     <Box className="w-4 h-4" /> Transaction Fees
                   </span>
-                  <div className="md:col-span-3 text-white text-sm">
+                  <div className="md:col-span-3 text-foreground text-sm">
                     {enrichedTxs.length > 0
                       ? enrichedTxs
                           .reduce((sum, tx) => sum + (tx.fee || 0), 0)
@@ -413,7 +413,7 @@ const BlockDetails = () => {
                     <Hash className="w-4 h-4" /> Block Hash
                   </span>
                   <div className="md:col-span-3">
-                    <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg border border-gray-800">
+                    <div className="flex items-center gap-2 bg-muted/40 p-3 rounded-lg border border-border">
                       <code className="text-accent font-mono text-xs sm:text-sm break-all flex-1">
                         {block.hash}
                       </code>
@@ -451,52 +451,52 @@ const BlockDetails = () => {
 
                   {showMoreDetails && (
                     <div className="mt-6 space-y-6 animate-in slide-in-from-top-2">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Difficulty
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono">
                           {block.difficulty?.toLocaleString()}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Version
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono">
                           {block.version}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Bits
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono">
                           {block.bits || "N/A"}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Nonce
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono break-all opacity-75">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono break-all opacity-75">
                           {block.nonce}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Merkle Root
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono break-all opacity-75">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono break-all opacity-75">
                           {block.merkle_root}
                         </div>
                       </div>
                       {/* Final Sapling Root - Explicit display logic */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Final Sapling Root
                         </span>
-                        <div className="md:col-span-3 text-purple-300 text-sm font-mono break-all opacity-75">
+                        <div className="md:col-span-3 text-purple-600 dark:text-purple-300 text-sm font-mono break-all opacity-75">
                           {block.finalsaplingroot ||
                             block.finalSaplingRoot ||
                             "N/A"}
@@ -511,7 +511,7 @@ const BlockDetails = () => {
             {/* Transactions Table Section */}
             <div id="transactions">
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-lg font-bold text-gray-200">
+                <h3 className="text-lg font-bold text-foreground">
                   TRANSACTIONS
                 </h3>
                 <Badge
@@ -522,10 +522,10 @@ const BlockDetails = () => {
                 </Badge>
               </div>
 
-              <Card className="bg-[#0f1016] border-gray-800 overflow-hidden">
+              <Card className="bg-card border-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-[#12131a] text-gray-400 text-xs uppercase font-medium border-b border-gray-800">
+                    <thead className="bg-muted/40 text-muted-foreground text-xs uppercase font-medium border-b border-border">
                       <tr>
                         <th className="px-6 py-4">#</th>
                         <th className="px-6 py-4">Type</th>
@@ -538,12 +538,12 @@ const BlockDetails = () => {
                         <th className="px-6 py-4 text-right">Amount (ZEC)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800/30">
+                    <tbody className="divide-y divide-border/30">
                       {enrichedTxs.length > 0
                         ? enrichedTxs.map((tx, i) => (
                             <tr
                               key={`block-tx-${i}`}
-                              className="hover:bg-white/5 transition-colors"
+                              className="hover:bg-muted/50 transition-colors"
                             >
                               <td className="px-6 py-4 text-gray-500 font-mono">
                                 #{i + 1}
@@ -602,7 +602,7 @@ const BlockDetails = () => {
                           block.tx?.slice(0, 10).map((txid, i) => (
                             <tr
                               key={`loading-tx-${i}`}
-                              className="hover:bg-white/5 transition-colors animate-pulse"
+                              className="hover:bg-muted/50 transition-colors animate-pulse"
                             >
                               <td className="px-6 py-4 text-gray-500 font-mono">
                                 #{i + 1}

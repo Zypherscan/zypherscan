@@ -301,14 +301,14 @@ const AddressDetails = () => {
 
         {/* Decoded Unified Address Components */}
         {decodedUA && (
-          <div className="mb-6 p-6 bg-[#0f1016] border border-gray-800 rounded-lg">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <div className="mb-6 p-6 bg-card border border-border rounded-lg">
+            <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <Layers className="w-5 h-5 text-accent" /> Unified Address
               Receivers
             </h3>
             <div className="space-y-4">
               {decodedUA.orchard && (
-                <div className="p-4 bg-black/40 rounded border border-gray-800 break-all group hover:border-terminal-green/30 transition-colors relative">
+                <div className="p-4 bg-muted/40 rounded border border-border break-all group hover:border-terminal-green/30 transition-colors relative">
                   <div className="text-xs text-muted-foreground uppercase mb-2 flex items-center gap-2 font-bold tracking-wider">
                     <Shield className="w-3 h-3 text-terminal-green" /> Orchard
                     Receiver (Main)
@@ -335,7 +335,7 @@ const AddressDetails = () => {
                 </div>
               )}
               {decodedUA.sapling && (
-                <div className="p-4 bg-black/40 rounded border border-gray-800 break-all group hover:border-purple-500/30 transition-colors relative">
+                <div className="p-4 bg-muted/40 rounded border border-border break-all group hover:border-purple-500/30 transition-colors relative">
                   <div className="text-xs text-muted-foreground uppercase mb-2 flex items-center gap-2 font-bold tracking-wider">
                     <Shield className="w-3 h-3 text-purple-400" /> Sapling
                     Receiver
@@ -362,7 +362,7 @@ const AddressDetails = () => {
                 </div>
               )}
               {decodedUA.transparent && (
-                <div className="p-4 bg-black/40 rounded border border-gray-800 break-all group hover:border-blue-500/30 transition-colors relative">
+                <div className="p-4 bg-muted/40 rounded border border-border break-all group hover:border-blue-500/30 transition-colors relative">
                   <div className="text-xs text-muted-foreground uppercase mb-2 flex items-center gap-2 font-bold tracking-wider">
                     <Database className="w-3 h-3 text-blue-400" /> Transparent
                     Receiver
@@ -396,10 +396,10 @@ const AddressDetails = () => {
 
         {isShieldedAddress ? (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <Card className="p-8 bg-[#0f1016] border-gray-800 border-l-4 border-l-terminal-green">
+            <Card className="p-8 bg-card border-border border-l-4 border-l-terminal-green">
               <div className="flex flex-col gap-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
                     <Shield className="w-6 h-6 text-terminal-green" />
                     Shielded Address Detected
                   </h2>
@@ -411,17 +411,17 @@ const AddressDetails = () => {
 
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-400 leading-relaxed">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
                       ZCash shielded addresses use zero-knowledge proofs to
                       encrypt transaction data on the blockchain. This means
                       that while transactions are verified, the sender,
                       receiver, and amount remain private.
                     </p>
-                    <div className="bg-black/20 p-4 rounded-lg border border-gray-800">
-                      <h3 className="text-sm font-semibold text-white mb-3">
+                    <div className="bg-muted/20 p-4 rounded-lg border border-border">
+                      <h3 className="text-sm font-semibold text-foreground mb-3">
                         Privacy Features:
                       </h3>
-                      <ul className="space-y-2 text-sm text-gray-400">
+                      <ul className="space-y-2 text-sm text-muted-foreground">
                         <li className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-terminal-green" />
                           Balance is encrypted
@@ -447,7 +447,7 @@ const AddressDetails = () => {
                       <h3 className="text-lg font-semibold text-terminal-green mb-2">
                         Want to View Your Transactions?
                       </h3>
-                      <p className="text-sm text-gray-400 mb-4">
+                      <p className="text-sm text-muted-foreground mb-4">
                         Use your Unified Full Viewing Key (UFVK) to decrypt
                         transactions sent to this address to unlock shielded
                         Transactions.
@@ -472,13 +472,13 @@ const AddressDetails = () => {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Balance */}
-              <Card className="p-6 bg-[#0f1016] border-gray-800 relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full justify-between gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Wallet className="w-4 h-4" /> ZEC Balance
                   </div>
                   <div>
-                    <div className="text-3xl font-mono font-bold text-white mb-1">
+                    <div className="text-3xl font-mono font-bold text-foreground mb-1">
                       {formatZEC(details.balance)}
                     </div>
                   </div>
@@ -486,13 +486,13 @@ const AddressDetails = () => {
               </Card>
 
               {/* Value */}
-              <Card className="p-6 bg-[#0f1016] border-gray-800 relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full justify-between gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Database className="w-4 h-4" /> ZEC Value
                   </div>
                   <div>
-                    <div className="text-3xl font-mono font-bold text-white mb-1">
+                    <div className="text-3xl font-mono font-bold text-foreground mb-1">
                       $
                       {details.balance && zecPrice
                         ? (details.balance * zecPrice).toLocaleString("en-US", {
@@ -509,13 +509,13 @@ const AddressDetails = () => {
               </Card>
 
               {/* Type & Stats */}
-              <Card className="p-6 bg-[#0f1016] border-gray-800 relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Shield className="w-4 h-4" /> Address Type
                   </div>
                   <div>
-                    <div className="text-xl font-bold text-white mb-1">
+                    <div className="text-xl font-bold text-foreground mb-1">
                       {addrType}
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -526,19 +526,19 @@ const AddressDetails = () => {
               </Card>
 
               {/* Total Txs */}
-              <Card className="p-6 bg-[#0f1016] border-gray-800 relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Database className="w-4 h-4" /> Total Transactions
                   </div>
-                  <div className="text-3xl font-mono font-bold text-white">
+                  <div className="text-3xl font-mono font-bold text-foreground">
                     {details.tx_count || 0}
                   </div>
                 </div>
               </Card>
 
               {/* First Tx */}
-              <Card className="p-6 bg-[#0f1016] border-gray-800 relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Clock className="w-4 h-4" /> First Transaction
@@ -564,7 +564,7 @@ const AddressDetails = () => {
               </Card>
 
               {/* Latest Tx */}
-              <Card className="p-6 bg-[#0f1016] border-gray-800 relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Clock className="w-4 h-4" /> Latest Transaction
@@ -592,32 +592,32 @@ const AddressDetails = () => {
 
             {/* Transactions List */}
             <div>
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
                 <Database className="w-5 h-5" /> Transactions{" "}
                 <span className="text-base font-normal text-muted-foreground">
                   (Latest {details.transactions?.length || 0})
                 </span>
               </h2>
-              <div className="rounded-lg border border-gray-800 bg-[#0f1016] overflow-hidden">
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
-                    <thead className="bg-black/40 text-xs uppercase text-gray-500 font-medium tracking-wider">
+                    <thead className="bg-muted/40 text-xs uppercase text-muted-foreground font-medium tracking-wider">
                       <tr>
-                        <th className="p-4 border-b border-gray-800">Type</th>
-                        <th className="p-4 border-b border-gray-800">
+                        <th className="p-4 border-b border-border">Type</th>
+                        <th className="p-4 border-b border-border">
                           Transaction Hash
                         </th>
-                        <th className="p-4 border-b border-gray-800">Block</th>
-                        <th className="p-4 border-b border-gray-800">Age</th>
-                        <th className="p-4 border-b border-gray-800">
+                        <th className="p-4 border-b border-border">Block</th>
+                        <th className="p-4 border-b border-border">Age</th>
+                        <th className="p-4 border-b border-border">
                           From / To
                         </th>
-                        <th className="p-4 border-b border-gray-800 text-right">
+                        <th className="p-4 border-b border-border text-right">
                           Amount (ZEC)
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800/50">
+                    <tbody className="divide-y divide-border/50">
                       {details.transactions?.map((tx, idx) => {
                         // Robust extraction of value
                         let rawValue = 0;
@@ -639,7 +639,7 @@ const AddressDetails = () => {
                         return (
                           <tr
                             key={tx.txid + idx}
-                            className="hover:bg-white/5 transition-colors"
+                            className="hover:bg-muted/5 transition-colors"
                           >
                             <td className="p-4">
                               <Badge
@@ -674,16 +674,16 @@ const AddressDetails = () => {
                                 #{tx.blockHeight}
                               </Link>
                             </td>
-                            <td className="p-4 text-sm text-gray-400">
+                            <td className="p-4 text-sm text-muted-foreground">
                               {formatTimeAgo(tx.timestamp || tx.blockTime)}
                             </td>
-                            <td className="p-4 text-sm font-mono text-gray-400">
+                            <td className="p-4 text-sm font-mono text-muted-foreground">
                               {isReceive ? (
                                 <div className="flex items-center gap-1">
                                   <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs border border-blue-500/30">
                                     Shielded
                                   </span>
-                                  <ArrowRight className="w-3 h-3 text-gray-600" />
+                                  <ArrowRight className="w-3 h-3 text-muted-foreground" />
                                   <Link
                                     to={`/address/${details.address}`}
                                     className="truncate max-w-[100px] text-accent hover:underline"
@@ -699,7 +699,7 @@ const AddressDetails = () => {
                                   >
                                     {details.address.slice(0, 8)}...
                                   </Link>
-                                  <ArrowRight className="w-3 h-3 text-gray-600" />
+                                  <ArrowRight className="w-3 h-3 text-muted-foreground" />
                                   <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs border border-blue-500/30">
                                     Shielded
                                   </span>
@@ -708,7 +708,9 @@ const AddressDetails = () => {
                             </td>
                             <td
                               className={`p-4 text-right font-mono font-bold text-sm ${
-                                isReceive ? "text-green-400" : "text-red-400"
+                                isReceive
+                                  ? "text-green-600 dark:text-green-400"
+                                  : "text-red-600 dark:text-red-400"
                               }`}
                             >
                               {isReceive ? "+" : ""}

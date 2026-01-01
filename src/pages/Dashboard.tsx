@@ -177,7 +177,10 @@ const Dashboard = () => {
 
               <Dialog open={isRescanOpen} onOpenChange={setIsRescanOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="border-accent/50">
+                  <Button
+                    variant="outline"
+                    className="border-accent/50 text-foreground"
+                  >
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Rescan
                   </Button>
@@ -220,7 +223,7 @@ const Dashboard = () => {
                 size="sm"
                 onClick={refresh}
                 disabled={isLoading || syncStatus.isSyncing}
-                className="border-accent/50"
+                className="border-accent/50 text-foreground"
               >
                 <RefreshCw
                   className={`w-4 h-4 mr-2 ${
