@@ -84,7 +84,7 @@
     --secondary-foreground: 220 15% 3%;
 
     --muted: 220 15% 94%;
-    --muted-foreground: 220 15% 35%; /* Much darker gray for readable subtext */
+    --muted-foreground: 220 15% 25%; /* Much darker gray for readable subtext */
 
     --accent: 28 100% 50%;
     --accent-foreground: 220 15% 3%;
