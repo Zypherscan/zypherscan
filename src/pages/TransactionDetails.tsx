@@ -38,6 +38,7 @@ import {
   Eye,
   AlertCircle,
   Loader2,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -357,6 +358,58 @@ const TransactionDetails = () => {
     }, 100);
   }, [transaction]);
 
+  const downloadCSV = () => {
+    if (!transaction) return;
+
+    const headers = [
+      "TxID",
+      "Block Height",
+      "Timestamp",
+      "Fee (ZEC)",
+      "Value (ZEC)",
+      "Size (Bytes)",
+      "Raw Data",
+    ];
+
+    const timestamp =
+      transaction.blockTime || transaction.time || transaction.timestamp;
+    const dateStr = timestamp
+      ? new Date(
+          typeof timestamp === "number" && timestamp < 100000000000
+            ? timestamp * 1000
+            : Number(timestamp)
+        ).toISOString()
+      : "N/A";
+
+    const csvContent = [
+      headers.join(","),
+      [
+        transaction.txid,
+        blockHeight,
+        dateStr,
+        transaction.fee,
+        transaction.value,
+        transaction.size,
+        `"${JSON.stringify(transaction).replace(/"/g, '""')}"`,
+      ].join(","),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `zypherscan-transaction-${transaction.txid}.csv`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -397,11 +450,22 @@ const TransactionDetails = () => {
             </button>
 
             {/* Header */}
-            <div className="flex items-center mb-2">
-              <h1 className="text-3xl font-bold text-foreground">
-                Transaction Details
-              </h1>
-              {getTypeBadge(txType)}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <h1 className="text-3xl font-bold text-foreground">
+                  Transaction Details
+                </h1>
+                {getTypeBadge(txType)}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadCSV}
+                className="gap-2 border-accent/20 hover:bg-accent/10"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export CSV</span>
+              </Button>
             </div>
 
             {/* Info Box (Theme) */}

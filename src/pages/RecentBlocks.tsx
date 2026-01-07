@@ -1,7 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
-import { Loader2, Box, ArrowRight, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Loader2,
+  Box,
+  ArrowRight,
+  ArrowLeft,
+  ArrowUpDown,
+  Download,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 const RecentBlocks = () => {
@@ -9,6 +17,77 @@ const RecentBlocks = () => {
   const { getLatestBlocks } = useZcashAPI();
   const [loading, setLoading] = useState(true);
   const [blocks, setBlocks] = useState<any[]>([]);
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  } | null>(null);
+
+  const sortedBlocks = useMemo(() => {
+    let sortableItems = [...blocks];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [blocks, sortConfig]);
+
+  const requestSort = (key: string) => {
+    let direction: "asc" | "desc" = "asc";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const downloadCSV = () => {
+    if (sortedBlocks.length === 0) return;
+
+    const headers = [
+      "Height",
+      "Hash",
+      "Time",
+      "Transactions",
+      "Size (Bytes)",
+      "Raw Data",
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      ...sortedBlocks.map((block) =>
+        [
+          block.height,
+          block.hash,
+          new Date(block.timestamp).toISOString(),
+          block.tx_count,
+          block.size,
+          `"${JSON.stringify(block).replace(/"/g, '""')}"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `zypherscan-recent_blocks.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   useEffect(() => {
     const fetchBlocks = async () => {
@@ -41,14 +120,24 @@ const RecentBlocks = () => {
         <span>Back</span>
       </button>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-          <Box className="w-8 h-8 text-accent" />
-          Recent Blocks
-        </h1>
-        <p className="text-muted-foreground">
-          The latest blocks mined on the ZCash network.
-        </p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
+            <Box className="w-8 h-8 text-accent" />
+            Recent Blocks
+          </h1>
+          <p className="text-muted-foreground">
+            The latest blocks mined on the ZCash network.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={downloadCSV}
+          className="gap-2 border-accent/20 hover:bg-accent/10"
+        >
+          <Download className="w-4 h-4" />
+          Export CSV
+        </Button>
       </div>
 
       {loading && blocks.length === 0 ? (
@@ -61,16 +150,48 @@ const RecentBlocks = () => {
             <table className="w-full text-sm text-left">
               <thead className="text-muted-foreground border-b border-border bg-accent/5">
                 <tr>
-                  <th className="py-3 pl-6 pr-2">Height</th>
+                  <th
+                    className="py-3 pl-6 pr-2 cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => requestSort("height")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Height
+                      <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </th>
                   <th className="py-3 px-2">Hash</th>
-                  <th className="py-3 px-2">Time</th>
-                  <th className="py-3 px-2">TXs</th>
-                  <th className="py-3 px-2">Size</th>
+                  <th
+                    className="py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => requestSort("timestamp")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Time
+                      <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => requestSort("tx_count")}
+                  >
+                    <div className="flex items-center gap-1">
+                      TXs
+                      <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </th>
+                  <th
+                    className="py-3 px-2 cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => requestSort("size")}
+                  >
+                    <div className="flex items-center gap-1">
+                      Size
+                      <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </th>
                   <th className="py-3 pr-6 pl-3 hidden md:block"></th>
                 </tr>
               </thead>
               <tbody className="font-mono">
-                {blocks.map((block) => (
+                {sortedBlocks.map((block) => (
                   <tr
                     key={block.hash}
                     className="border-b border-border/50 last:border-0 hover:bg-accent/5 transition-colors"

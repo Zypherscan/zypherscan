@@ -121,7 +121,6 @@ export interface ZecPrice {
 }
 
 const ZEBRA_RPC_URL = "/zebra/";
-const CIPHERSCAN_API_BASE = "/api";
 
 import { useNetwork } from "@/contexts/NetworkContext";
 
