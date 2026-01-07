@@ -39,6 +39,8 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+import { NetworkActivityBanner } from "@/components/NetworkActivityBanner";
+
 export const Layout = ({ children }: LayoutProps) => {
   const { isConnected, viewingKey, disconnect, login } = useAuth();
   const { network, setNetwork } = useNetwork();
@@ -118,6 +120,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
+      <NetworkActivityBanner />
       <div className="w-full bg-accent/10 border-b border-accent/20 py-1.5 flex justify-center items-center">
         <SupportDialog>
           <button className="text-[11px] text-accent tracking-wider font-medium hover:text-accent/80 transition-colors flex items-center gap-1.5 text-center leading-tight md:leading-normal">

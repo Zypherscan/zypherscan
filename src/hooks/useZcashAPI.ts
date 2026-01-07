@@ -540,6 +540,33 @@ export const useZcashAPI = () => {
     }
   }, []);
 
+  const getTransaction = useCallback(async (txid: string) => {
+    let t = await fetchCipherscan(`/tx/${txid}`);
+
+    if (t) {
+      const tNormalized = normalizeTransaction(t);
+      return {
+        ...t,
+        txid: tNormalized.txid,
+        blockheight: tNormalized.height
+          ? parseInt(tNormalized.height)
+          : tNormalized.blockheight || undefined,
+        height: tNormalized.height
+          ? parseInt(tNormalized.height)
+          : tNormalized.blockheight || undefined,
+        timestamp: tNormalized.time
+          ? new Date(Number(tNormalized.time) * 1000).toISOString()
+          : new Date().toISOString(),
+        value_balance: tNormalized.value_balance || tNormalized.valueBalance,
+        vshielded_spend:
+          tNormalized.shielded_spends || tNormalized.vShieldedSpend || 0,
+        vshielded_output:
+          tNormalized.shielded_outputs || tNormalized.vShieldedOutput || 0,
+      };
+    }
+    return null;
+  }, []);
+
   return {
     getLatestBlocks,
     searchBlockchain,
@@ -551,5 +578,6 @@ export const useZcashAPI = () => {
     getZecPrice,
     getAddressDetails,
     decodeUnifiedAddress,
+    getTransaction,
   };
 };
