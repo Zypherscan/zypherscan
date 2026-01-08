@@ -38,6 +38,7 @@ import {
   Eye,
   AlertCircle,
   Loader2,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -357,6 +358,58 @@ const TransactionDetails = () => {
     }, 100);
   }, [transaction]);
 
+  const downloadCSV = () => {
+    if (!transaction) return;
+
+    const headers = [
+      "TxID",
+      "Block Height",
+      "Timestamp",
+      "Fee (ZEC)",
+      "Value (ZEC)",
+      "Size (Bytes)",
+      "Raw Data",
+    ];
+
+    const timestamp =
+      transaction.blockTime || transaction.time || transaction.timestamp;
+    const dateStr = timestamp
+      ? new Date(
+          typeof timestamp === "number" && timestamp < 100000000000
+            ? timestamp * 1000
+            : Number(timestamp)
+        ).toISOString()
+      : "N/A";
+
+    const csvContent = [
+      headers.join(","),
+      [
+        transaction.txid,
+        blockHeight,
+        dateStr,
+        transaction.fee,
+        transaction.value,
+        transaction.size,
+        `"${JSON.stringify(transaction).replace(/"/g, '""')}"`,
+      ].join(","),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `zypherscan-transaction-${transaction.txid}.csv`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -397,11 +450,22 @@ const TransactionDetails = () => {
             </button>
 
             {/* Header */}
-            <div className="flex items-center mb-2">
-              <h1 className="text-3xl font-bold text-white">
-                Transaction Details
-              </h1>
-              {getTypeBadge(txType)}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <h1 className="text-3xl font-bold text-foreground">
+                  Transaction Details
+                </h1>
+                {getTypeBadge(txType)}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadCSV}
+                className="gap-2 border-accent/20 hover:bg-accent/10"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export CSV</span>
+              </Button>
             </div>
 
             {/* Info Box (Theme) */}
@@ -420,7 +484,7 @@ const TransactionDetails = () => {
 
             {/* Decrypt Banner (Purple) */}
             {hasShieldedActivity(transaction) && !decryptedData && (
-              <div className="bg-[#1a1b26] border border-purple-500/30 rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4 card-glow relative overflow-hidden">
+              <div className="bg-card border border-purple-500/30 rounded-lg p-6 flex flex-col md:flex-row items-center justify-between gap-4 card-glow relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
                 <div className="flex items-start gap-4 z-10">
                   <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
@@ -470,7 +534,7 @@ const TransactionDetails = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-black/40 p-4 rounded-lg border border-green-500/20">
+                  <div className="bg-muted/40 p-4 rounded-lg border border-green-500/20">
                     <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider">
                       Amount
                     </p>
@@ -478,7 +542,7 @@ const TransactionDetails = () => {
                       {formatZEC(decryptedData.amount)} ZEC
                     </p>
                   </div>
-                  <div className="bg-black/40 p-4 rounded-lg border border-green-500/20">
+                  <div className="bg-muted/40 p-4 rounded-lg border border-green-500/20">
                     <p className="text-xs text-gray-400 mb-1 uppercase tracking-wider">
                       Memo
                     </p>
@@ -491,14 +555,14 @@ const TransactionDetails = () => {
             )}
 
             {/* Main Details Card */}
-            <Card className="bg-[#0f1016] border-gray-800 p-0 overflow-hidden">
+            <Card className="bg-card border-border p-0 overflow-hidden">
               <div className="p-6 space-y-6">
                 {/* Hash */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-gray-400 text-sm font-medium">
                     <Hash className="w-4 h-4" /> Transaction Hash
                   </div>
-                  <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg border border-gray-800">
+                  <div className="flex items-center gap-2 bg-muted/40 p-3 rounded-lg border border-border">
                     <code className="text-accent font-mono text-sm break-all flex-1">
                       {transaction.txid}
                     </code>
@@ -551,7 +615,7 @@ const TransactionDetails = () => {
                     <span className="text-gray-400 text-sm flex items-center gap-2">
                       <Clock className="w-4 h-4" /> Timestamp
                     </span>
-                    <div className="md:col-span-3 text-white text-sm">
+                    <div className="md:col-span-3 text-foreground text-sm">
                       {(() => {
                         const timestamp =
                           transaction.blockTime ||
@@ -576,7 +640,7 @@ const TransactionDetails = () => {
                     <span className="text-gray-400 text-sm flex items-center gap-2">
                       Transaction Fee
                     </span>
-                    <div className="md:col-span-3 text-white font-mono text-sm">
+                    <div className="md:col-span-3 text-foreground font-mono text-sm">
                       {transaction.fee
                         ? `${formatZEC(transaction.fee)} ZEC`
                         : "0.00000000 ZEC"}
@@ -587,7 +651,7 @@ const TransactionDetails = () => {
                     <span className="text-gray-400 text-sm flex items-center gap-2">
                       Value
                     </span>
-                    <div className="md:col-span-3 text-white font-mono text-sm font-bold">
+                    <div className="md:col-span-3 text-foreground font-mono text-sm font-bold">
                       {transaction.value !== undefined &&
                       transaction.value !== null
                         ? `${formatZEC(transaction.value)} ZEC`
@@ -598,7 +662,7 @@ const TransactionDetails = () => {
               </div>
 
               {/* Show More Details */}
-              <div className="border-t border-gray-800">
+              <div className="border-t border-border">
                 <button
                   onClick={() => setShowMoreDetails(!showMoreDetails)}
                   className="w-full flex items-center gap-2 p-4 text-accent hover:text-accent/80 text-sm font-medium transition-colors"
@@ -611,31 +675,37 @@ const TransactionDetails = () => {
                   {showMoreDetails ? "Hide Details" : "Show More Details"}
                 </button>
                 {showMoreDetails && (
-                  <div className="p-6 bg-black/20 space-y-4 border-t border-gray-800 animate-in slide-in-from-top-2">
+                  <div className="p-6 bg-muted/20 space-y-4 border-t border-border animate-in slide-in-from-top-2">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <span className="text-gray-500 text-sm">Version</span>
-                      <span className="text-gray-300 font-mono text-sm">
+                      <span className="text-muted-foreground text-sm">
+                        Version
+                      </span>
+                      <span className="text-foreground font-mono text-sm">
                         {transaction.version}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <span className="text-gray-500 text-sm">Lock Time</span>
-                      <span className="text-gray-300 font-mono text-sm">
+                      <span className="text-muted-foreground text-sm">
+                        Lock Time
+                      </span>
+                      <span className="text-foreground font-mono text-sm">
                         {transaction.locktime}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <span className="text-gray-500 text-sm">Size</span>
-                      <span className="text-gray-300 font-mono text-sm">
+                      <span className="text-muted-foreground text-sm">
+                        Size
+                      </span>
+                      <span className="text-foreground font-mono text-sm">
                         {transaction.size} bytes
                       </span>
                     </div>
                     {transaction.hasOrchard && transaction.orchardActions && (
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <span className="text-gray-500 text-sm">
+                        <span className="text-muted-foreground text-sm">
                           Orchard Actions
                         </span>
-                        <span className="text-gray-300 font-mono text-sm">
+                        <span className="text-foreground font-mono text-sm">
                           {transaction.orchardActions}
                         </span>
                       </div>
@@ -643,10 +713,10 @@ const TransactionDetails = () => {
                     {transaction.valueBalanceOrchard &&
                       Number(transaction.valueBalanceOrchard) !== 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <span className="text-gray-500 text-sm">
+                          <span className="text-muted-foreground text-sm">
                             Orchard Value Balance
                           </span>
-                          <span className="text-purple-400 font-mono text-sm font-bold">
+                          <span className="text-purple-600 dark:text-purple-400 font-mono text-sm font-bold">
                             {Number(transaction.valueBalanceOrchard) > 0
                               ? "+"
                               : ""}
@@ -657,20 +727,20 @@ const TransactionDetails = () => {
                       )}
                     {(transaction.blockhash || transaction.blockHash) && (
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <span className="text-gray-500 text-sm">
+                        <span className="text-muted-foreground text-sm">
                           Block Hash
                         </span>
-                        <span className="text-gray-300 font-mono text-sm truncate block md:col-span-3">
+                        <span className="text-foreground font-mono text-sm truncate block md:col-span-3">
                           {transaction.blockhash || transaction.blockHash}
                         </span>
                       </div>
                     )}
                     {transaction.expiryHeight && (
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <span className="text-gray-500 text-sm">
+                        <span className="text-muted-foreground text-sm">
                           Expiry Height
                         </span>
-                        <span className="text-gray-300 font-mono text-sm">
+                        <span className="text-foreground font-mono text-sm">
                           {transaction.expiryHeight}
                         </span>
                       </div>
@@ -683,12 +753,15 @@ const TransactionDetails = () => {
             {/* Inputs & Outputs Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Inputs */}
-              <Card className="bg-[#0f1016] border-gray-800 p-0">
-                <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-                  <h3 className="font-bold text-white flex items-center gap-2">
+              <Card className="bg-card border-border p-0">
+                <div className="p-4 border-b border-border flex justify-between items-center">
+                  <h3 className="font-bold text-foreground flex items-center gap-2">
                     <ArrowDownRight className="w-5 h-5 text-gray-400" /> Inputs
                   </h3>
-                  <Badge variant="secondary" className="bg-gray-800">
+                  <Badge
+                    variant="secondary"
+                    className="bg-muted text-muted-foreground"
+                  >
                     {(transaction.inputCount || 0) +
                       (transaction.orchardActions || 0) ||
                       (transaction.vin?.length || 0) +
@@ -696,12 +769,12 @@ const TransactionDetails = () => {
                         (transaction.orchard?.actions?.length || 0)}
                   </Badge>
                 </div>
-                <div className="divide-y divide-gray-800/50">
+                <div className="divide-y divide-border/50">
                   {/* Shielded Spends (Sapling) */}
                   {transaction.vShieldedSpend?.map((spend, i) => (
                     <div
                       key={`sapling-spend-${i}`}
-                      className="p-4 flex items-center gap-3 group hover:bg-white/5 transition-colors"
+                      className="p-4 flex items-center gap-3 group hover:bg-muted/50 transition-colors"
                     >
                       <Shield className="w-5 h-5 text-purple-400" />
                       <div>
@@ -737,7 +810,7 @@ const TransactionDetails = () => {
                     .map((input, i) => (
                       <div
                         key={`vin-${i}`}
-                        className="p-4 flex justify-between group hover:bg-white/5 transition-colors"
+                        className="p-4 flex justify-between group hover:bg-muted/50 transition-colors"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -761,12 +834,15 @@ const TransactionDetails = () => {
               </Card>
 
               {/* Outputs */}
-              <Card className="bg-[#0f1016] border-gray-800 p-0">
-                <div className="p-4 border-b border-gray-800 flex justify-between items-center">
-                  <h3 className="font-bold text-white flex items-center gap-2">
+              <Card className="bg-card border-border p-0">
+                <div className="p-4 border-b border-border flex justify-between items-center">
+                  <h3 className="font-bold text-foreground flex items-center gap-2">
                     <ArrowUpRight className="w-5 h-5 text-gray-400" /> Outputs
                   </h3>
-                  <Badge variant="secondary" className="bg-gray-800">
+                  <Badge
+                    variant="secondary"
+                    className="bg-muted text-muted-foreground"
+                  >
                     {(transaction.outputCount || 0) +
                       (transaction.orchardActions || 0) ||
                       (transaction.vout?.length || 0) +
@@ -774,12 +850,12 @@ const TransactionDetails = () => {
                         (transaction.orchard?.actions?.length || 0)}
                   </Badge>
                 </div>
-                <div className="divide-y divide-gray-800/50">
+                <div className="divide-y divide-border/50">
                   {/* Shielded Outputs (Sapling) */}
                   {transaction.vShieldedOutput?.map((output, i) => (
                     <div
                       key={`sapling-output-${i}`}
-                      className="p-4 flex items-center gap-3 group hover:bg-white/5 transition-colors"
+                      className="p-4 flex items-center gap-3 group hover:bg-muted/50 transition-colors"
                     >
                       <Shield className="w-5 h-5 text-purple-400" />
                       <div>

@@ -101,7 +101,7 @@ export const SearchBar = ({
           disabled={loading}
           className={`${
             isHeader
-              ? "pl-10 pr-12 py-2 h-10 text-sm bg-[#1a1b26]/80 border-accent/10 focus:border-accent/40"
+              ? "pl-10 pr-12 py-2 h-10 text-sm bg-muted/50 border-accent/10 focus:border-accent/40"
               : "pl-12 pr-32 py-6 text-sm bg-card/50 backdrop-blur-sm border-accent/20 focus:border-accent"
           } font-mono transition-all`}
         />

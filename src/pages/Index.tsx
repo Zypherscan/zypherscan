@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 
 const Index = () => {
+  console.log("Hello Everyone! Madhu S Gowda here, Creator of Zypherscan. Here is my X: https://x.com/madhusgowda_ ");
   const { isConnected } = useAuth();
   const navigate = useNavigate();
 

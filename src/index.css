@@ -69,35 +69,35 @@
 
   .light {
     --background: 0 0% 100%;
-    --foreground: 220 15% 8%;
+    --foreground: 220 15% 3%; /* Much darker, nearly black */
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 8%;
+    --card-foreground: 220 15% 3%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 8%;
+    --popover-foreground: 220 15% 3%;
 
-    --primary: 28 100% 55%;
-    --primary-foreground: 220 15% 8%;
+    --primary: 28 100% 50%; /* Slightly darker orange for better contrast on white */
+    --primary-foreground: 220 15% 3%;
 
-    --secondary: 220 15% 96%;
-    --secondary-foreground: 220 15% 8%;
+    --secondary: 220 15% 94%; /* Slightly darker background */
+    --secondary-foreground: 220 15% 3%;
 
-    --muted: 220 15% 96%;
-    --muted-foreground: 220 15% 46%;
+    --muted: 220 15% 94%;
+    --muted-foreground: 220 15% 25%; /* Much darker gray for readable subtext */
 
-    --accent: 28 100% 55%;
-    --accent-foreground: 220 15% 8%;
+    --accent: 28 100% 50%;
+    --accent-foreground: 220 15% 3%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 28 100% 55%;
+    --border: 220 15% 82%; /* Darker border for better definition */
+    --input: 220 15% 82%;
+    --ring: 28 100% 50%;
 
-    --gradient-dark: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 15% 96%));
-    --shadow-card: 0 4px 20px hsl(220 15% 80% / 0.2);
+    --gradient-dark: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 15% 94%));
+    --shadow-card: 0 4px 20px hsl(220 15% 70% / 0.15); /* Stronger shadow */
   }
 }
 

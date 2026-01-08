@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useZcashAPI, Block } from "@/hooks/useZcashAPI";
@@ -18,6 +18,8 @@ import {
   Check,
   ChevronRight,
   ChevronDown,
+  ArrowUpDown,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +33,7 @@ interface TransactionSummary {
   ins: number;
   outs: number;
   size: number;
+  raw?: any;
 }
 
 interface BlockDetails extends Block {
@@ -60,6 +63,100 @@ const BlockDetails = () => {
   const [copiedHash, setCopiedHash] = useState(false);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [enrichedTxs, setEnrichedTxs] = useState<TransactionSummary[]>([]);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof TransactionSummary;
+    direction: "asc" | "desc";
+  } | null>(null);
+
+  const sortedTxs = useMemo(() => {
+    let sortableItems = [...enrichedTxs];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [enrichedTxs, sortConfig]);
+
+  const requestSort = (key: keyof TransactionSummary) => {
+    let direction: "asc" | "desc" = "asc";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const downloadCSV = () => {
+    if (!block) return;
+
+    const headers = [
+      "Height",
+      "Timestamp",
+      "Transactions Count",
+      "Confirmations",
+      "Block Size (KB)",
+      "Transaction Fees (ZEC)",
+      "Block Hash",
+      "Difficulty",
+      "Version",
+      "Bits",
+      "Nonce",
+      "Merkle Root",
+      "Final Sapling Root",
+      "Raw Data",
+    ];
+
+    const fees =
+      enrichedTxs.length > 0
+        ? enrichedTxs.reduce((sum, tx) => sum + (tx.fee || 0), 0)
+        : 0;
+
+    const escape = (val: string | number | undefined | null) => {
+      if (val === undefined || val === null) return "";
+      return `"${String(val).replace(/"/g, '""')}"`;
+    };
+
+    const row = [
+      block.height,
+      new Date(block.timestamp).toLocaleString(),
+      block.tx_count,
+      block.confirmations,
+      (block.size / 1024).toFixed(2),
+      fees.toFixed(8),
+      block.hash,
+      block.difficulty,
+      block.version,
+      block.bits,
+      block.nonce,
+      block.merkle_root,
+      block.finalsaplingroot || block.finalSaplingRoot,
+      JSON.stringify(block),
+    ].map(escape);
+
+    const csvContent = [headers.join(","), row.join(",")].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `zypherscan-block-${block.height}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   useEffect(() => {
     const fetchBlock = async () => {
@@ -110,7 +207,9 @@ const BlockDetails = () => {
             fee: 0,
             ins: 0,
             outs: 0,
+
             size: 0,
+            raw: t,
           });
           continue;
         }
@@ -214,7 +313,9 @@ const BlockDetails = () => {
           fee,
           ins: t.vin_count || t.inputs?.length || 0,
           outs: t.vout_count || t.outputs?.length || 0,
+
           size: t.size || 0,
+          raw: t,
         });
       }
 
@@ -324,7 +425,7 @@ const BlockDetails = () => {
                       <ArrowLeft className="w-6 h-6" />
                     </button>
                   )}
-                  <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+                  <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                     <span className="text-gray-500 text-2xl">#</span>
                     {block.height.toLocaleString()}
                   </h1>
@@ -336,18 +437,27 @@ const BlockDetails = () => {
                     <ArrowRight className="w-6 h-6" />
                   </button>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadCSV}
+                  className="gap-2 border-accent/20 hover:bg-accent/10"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="hidden sm:inline">Export CSV</span>
+                </Button>
               </div>
             </div>
 
             {/* Block Details Card */}
-            <Card className="bg-[#0f1016] border-gray-800 p-0 overflow-hidden">
+            <Card className="bg-card border-border p-0 overflow-hidden">
               <div className="p-6 space-y-6">
                 {/* Timestamp */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
                   <span className="text-gray-400 text-sm flex items-center gap-2">
                     <Clock className="w-4 h-4" /> Timestamp
                   </span>
-                  <div className="md:col-span-3 text-white text-sm">
+                  <div className="md:col-span-3 text-foreground text-sm">
                     {formatTimestamp(block.timestamp)}
                   </div>
                 </div>
@@ -386,7 +496,7 @@ const BlockDetails = () => {
                   <span className="text-gray-400 text-sm flex items-center gap-2">
                     <Box className="w-4 h-4" /> Block Size
                   </span>
-                  <div className="md:col-span-3 text-white text-sm">
+                  <div className="md:col-span-3 text-foreground text-sm">
                     {block.size
                       ? `${(block.size / 1024).toFixed(2)} KB`
                       : "N/A"}
@@ -398,7 +508,7 @@ const BlockDetails = () => {
                   <span className="text-gray-400 text-sm flex items-center gap-2">
                     <Box className="w-4 h-4" /> Transaction Fees
                   </span>
-                  <div className="md:col-span-3 text-white text-sm">
+                  <div className="md:col-span-3 text-foreground text-sm">
                     {enrichedTxs.length > 0
                       ? enrichedTxs
                           .reduce((sum, tx) => sum + (tx.fee || 0), 0)
@@ -413,7 +523,7 @@ const BlockDetails = () => {
                     <Hash className="w-4 h-4" /> Block Hash
                   </span>
                   <div className="md:col-span-3">
-                    <div className="flex items-center gap-2 bg-black/40 p-3 rounded-lg border border-gray-800">
+                    <div className="flex items-center gap-2 bg-muted/40 p-3 rounded-lg border border-border">
                       <code className="text-accent font-mono text-xs sm:text-sm break-all flex-1">
                         {block.hash}
                       </code>
@@ -451,52 +561,52 @@ const BlockDetails = () => {
 
                   {showMoreDetails && (
                     <div className="mt-6 space-y-6 animate-in slide-in-from-top-2">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Difficulty
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono">
                           {block.difficulty?.toLocaleString()}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Version
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono">
                           {block.version}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Bits
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono">
                           {block.bits || "N/A"}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Nonce
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono break-all opacity-75">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono break-all opacity-75">
                           {block.nonce}
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Merkle Root
                         </span>
-                        <div className="md:col-span-3 text-white text-sm font-mono break-all opacity-75">
+                        <div className="md:col-span-3 text-foreground text-sm font-mono break-all opacity-75">
                           {block.merkle_root}
                         </div>
                       </div>
                       {/* Final Sapling Root - Explicit display logic */}
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
-                        <span className="text-gray-400 text-sm font-mono">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-border/50 pb-4">
+                        <span className="text-muted-foreground text-sm font-mono">
                           &lt;/&gt; Final Sapling Root
                         </span>
-                        <div className="md:col-span-3 text-purple-300 text-sm font-mono break-all opacity-75">
+                        <div className="md:col-span-3 text-purple-600 dark:text-purple-300 text-sm font-mono break-all opacity-75">
                           {block.finalsaplingroot ||
                             block.finalSaplingRoot ||
                             "N/A"}
@@ -511,7 +621,7 @@ const BlockDetails = () => {
             {/* Transactions Table Section */}
             <div id="transactions">
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-lg font-bold text-gray-200">
+                <h3 className="text-lg font-bold text-foreground">
                   TRANSACTIONS
                 </h3>
                 <Badge
@@ -522,28 +632,68 @@ const BlockDetails = () => {
                 </Badge>
               </div>
 
-              <Card className="bg-[#0f1016] border-gray-800 overflow-hidden">
+              <Card className="bg-card border-border overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-[#12131a] text-gray-400 text-xs uppercase font-medium border-b border-gray-800">
+                    <thead className="bg-muted/40 text-muted-foreground text-xs uppercase font-medium border-b border-border">
                       <tr>
                         <th className="px-6 py-4">#</th>
-                        <th className="px-6 py-4">Type</th>
+                        <th
+                          className="px-6 py-4 cursor-pointer hover:text-foreground transition-colors group"
+                          onClick={() => requestSort("type")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Type
+                            <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </th>
                         <th className="px-6 py-4">Hash</th>
                         <th className="px-6 py-4">From</th>
                         <th className="px-6 py-4">To</th>
-                        <th className="px-6 py-4 text-center">Ins</th>
-                        <th className="px-6 py-4 text-center">Outs</th>
-                        <th className="px-6 py-4">Size</th>
-                        <th className="px-6 py-4 text-right">Amount (ZEC)</th>
+                        <th
+                          className="px-6 py-4 text-center cursor-pointer hover:text-foreground transition-colors group"
+                          onClick={() => requestSort("ins")}
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Ins
+                            <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </th>
+                        <th
+                          className="px-6 py-4 text-center cursor-pointer hover:text-foreground transition-colors group"
+                          onClick={() => requestSort("outs")}
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            Outs
+                            <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </th>
+                        <th
+                          className="px-6 py-4 cursor-pointer hover:text-foreground transition-colors group"
+                          onClick={() => requestSort("size")}
+                        >
+                          <div className="flex items-center gap-1">
+                            Size
+                            <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </th>
+                        <th
+                          className="px-6 py-4 text-right cursor-pointer hover:text-foreground transition-colors group"
+                          onClick={() => requestSort("value")}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            Amount (ZEC)
+                            <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800/30">
-                      {enrichedTxs.length > 0
-                        ? enrichedTxs.map((tx, i) => (
+                    <tbody className="divide-y divide-border/30">
+                      {sortedTxs.length > 0
+                        ? sortedTxs.map((tx, i) => (
                             <tr
                               key={`block-tx-${i}`}
-                              className="hover:bg-white/5 transition-colors"
+                              className="hover:bg-muted/50 transition-colors"
                             >
                               <td className="px-6 py-4 text-gray-500 font-mono">
                                 #{i + 1}
@@ -602,7 +752,7 @@ const BlockDetails = () => {
                           block.tx?.slice(0, 10).map((txid, i) => (
                             <tr
                               key={`loading-tx-${i}`}
-                              className="hover:bg-white/5 transition-colors animate-pulse"
+                              className="hover:bg-muted/50 transition-colors animate-pulse"
                             >
                               <td className="px-6 py-4 text-gray-500 font-mono">
                                 #{i + 1}

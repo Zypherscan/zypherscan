@@ -7,6 +7,8 @@
     { "source": "/api/zypher", "destination": "/api/proxy-zypher" },
     { "source": "/api/zypher/(.*)", "destination": "/api/proxy-zypher?path=$1" },
     { "source": "/api/(.*)", "destination": "/api/proxy-mainnet?path=$1" },
+    { "source": "/coingecko", "destination": "/api/proxy-coingecko" },
+    { "source": "/coingecko/(.*)", "destination": "/api/proxy-coingecko?path=$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

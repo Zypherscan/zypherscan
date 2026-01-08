@@ -86,12 +86,12 @@ export const SupportDialog = ({ children }: SupportDialogProps) => {
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="bg-[#12171d] border-border/20 text-foreground w-[90vw] sm:max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className="bg-background dark:bg-[#12171d] border-border dark:border-border/20 text-foreground w-[90vw] sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center text-xl font-bold">
             Support Zypherscan
           </DialogTitle>
-          <DialogDescription className="text-center text-muted-foreground pt-2">
+          <DialogDescription className="text-center text-zinc-600 dark:text-muted-foreground pt-2">
             Your donation is private and encrypted.
             <br />
             Thank you for support! 🙏
@@ -105,11 +105,12 @@ export const SupportDialog = ({ children }: SupportDialogProps) => {
             />
           </div>
           <div className="w-full space-y-2">
-            <p className="text-xs text-center text-muted-foreground uppercase tracking-wider font-semibold">
+            <p className="text-xs text-center text-zinc-700 dark:text-muted-foreground uppercase tracking-wider font-semibold">
               Donation Address (Unified & Shielded)
             </p>
             <p className="text-xs text-center text-muted-foreground uppercase tracking-wider font-semibold text-red-500">
-              ⚠️Send only Zcash ($ZEC) to this address. Sending other assets may result in permanent loss.
+              ⚠️Send only Zcash ($ZEC) to this address. Sending other assets may
+              result in permanent loss.
             </p>
             <button
               onClick={() =>
@@ -117,7 +118,7 @@ export const SupportDialog = ({ children }: SupportDialogProps) => {
                   "u1htqcdyp8lp9l3t0z4929zgc4fk7xnrk96s4rg6fwnev6l99zuy7nh6e73s67s24cvz7ra8897wu074tegslrq6e5f3nd7tz0sr4w8hz7rhafezu53p9dt9jfrj04ydjf8akadhjr08ztcznjynq2nqkuwv78a8cfsckfp8eps4309h9sjvx3rvauw8v50ef6up6alhllawf65ny69yk"
                 )
               }
-              className="w-full relative group text-[10px] font-mono text-muted-foreground/80 break-all text-center bg-black/20 p-3 rounded-lg border border-white/5 hover:bg-black/30 transition-all cursor-pointer flex flex-col items-center gap-2"
+              className="w-full relative group text-[10px] font-mono text-foreground dark:text-muted-foreground/80 break-all text-center bg-muted/50 dark:bg-black/20 p-3 rounded-lg border border-border/20 dark:border-white/5 hover:bg-muted dark:hover:bg-black/30 transition-all cursor-pointer flex flex-col items-center gap-2"
             >
               <span className="leading-relaxed">
                 u1htqcdyp8lp9l3t0z4929zgc4fk7xnrk96s4rg6fwnev6l99zuy7nh6e73s67s24cvz7ra8897wu074tegslrq6e5f3nd7tz0sr4w8hz7rhafezu53p9dt9jfrj04ydjf8akadhjr08ztcznjynq2nqkuwv78a8cfsckfp8eps4309h9sjvx3rvauw8v50ef6up6alhllawf65ny69yk

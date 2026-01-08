@@ -20,7 +20,9 @@ export function SyncStatusCard() {
   // Status Text & Icon
   const statusText = isSyncing ? "Syncing..." : "Fully synced";
   const StatusIcon = isSyncing ? RefreshCw : CheckCircle2;
-  const iconColor = isSyncing ? "text-yellow-400" : "text-green-500";
+  const iconColor = isSyncing
+    ? "text-yellow-600 dark:text-yellow-400"
+    : "text-green-600 dark:text-green-500";
   const spinClass = isSyncing ? "animate-spin" : "";
 
   // Bottom Messaging
@@ -33,7 +35,9 @@ export function SyncStatusCard() {
         {/* Header Status */}
         <div className="flex items-center gap-2">
           <StatusIcon className={`w-5 h-5 ${iconColor} ${spinClass}`} />
-          <span className="font-semibold text-lg text-white">{statusText}</span>
+          <span className="font-semibold text-lg text-foreground">
+            {statusText}
+          </span>
         </div>
 
         {/* Refresh Button */}
@@ -42,7 +46,7 @@ export function SyncStatusCard() {
           size="sm"
           onClick={refresh}
           disabled={isSyncing}
-          className="bg-transparent border-gray-700 hover:bg-gray-800 text-white"
+          className="bg-transparent border-border hover:bg-muted text-foreground"
         >
           {isSyncing ? (
             <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -58,8 +62,8 @@ export function SyncStatusCard() {
         className={`p-3 rounded-lg border text-sm font-mono flex items-center
         ${
           isSyncing
-            ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-500"
-            : "bg-green-500/10 border-green-500/20 text-green-400"
+            ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-500"
+            : "bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400"
         }`}
       >
         {isSyncing ? (

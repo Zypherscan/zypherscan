@@ -21,6 +21,12 @@ export const formatZEC = (value: number | undefined | null): string => {
   });
 };
 
+export const formatZECWithSymbol = (
+  value: number | undefined | null
+): string => {
+  return `${formatZEC(value)} ZEC`;
+};
+
 export interface WalletBalance {
   total: number;
   shielded: number;
