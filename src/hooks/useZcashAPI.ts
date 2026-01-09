@@ -37,7 +37,7 @@ const normalizeTxIds = (blockData: any): string[] => {
     .filter((id): id is string => !!id);
 };
 
-// Helper to normalize Cipherscan transaction data to standard RPC format
+// Helper to normalize Zypherscan transaction data to standard RPC format
 const normalizeTransaction = (tx: any) => {
   const normalized = { ...tx };
 
@@ -127,8 +127,8 @@ import { useNetwork } from "@/contexts/NetworkContext";
 export const useZcashAPI = () => {
   const { apiBase, zecPrice } = useNetwork();
 
-  // Helper for fetching from Cipherscan
-  const fetchCipherscan = async (endpoint: string) => {
+  // Helper for fetching from Zypherscan
+  const fetchZypherscan = async (endpoint: string) => {
     const url = `${apiBase}${endpoint}`;
     try {
       const response = await fetch(url, {
@@ -138,15 +138,15 @@ export const useZcashAPI = () => {
       });
       // Return null for 404 or 400 (Bad Request) - let caller try other endpoints
       if (response.status === 404 || response.status === 400) {
-        console.warn(`Cipherscan API 404/400 for ${url}`);
+        console.warn(`Zypherscan API 404/400 for ${url}`);
         return null;
       }
       if (!response.ok) {
-        throw new Error(`Cipherscan API error: ${response.statusText}`);
+        throw new Error(`Zypherscan API error: ${response.statusText}`);
       }
       return await response.json();
     } catch (error) {
-      console.error(`Failed to fetch from Cipherscan (${url}):`, error);
+      console.error(`Failed to fetch from Zypherscan (${url}):`, error);
       return null;
     }
   };
@@ -177,8 +177,8 @@ export const useZcashAPI = () => {
 
   const getNetworkStatus =
     useCallback(async (): Promise<NetworkStats | null> => {
-      const data = await fetchCipherscan("/network/stats");
-      // Map new Cipherscan structure
+      const data = await fetchZypherscan("/network/stats");
+      // Map new Zypherscan structure
 
       const basicStats = data
         ? {
@@ -249,7 +249,7 @@ export const useZcashAPI = () => {
 
       // Try to get live mempool info too since /network/stats might miss it
       try {
-        const mempoolResp = await fetchCipherscan("/mempool");
+        const mempoolResp = await fetchZypherscan("/mempool");
         if (mempoolResp && mempoolResp.stats) {
           return {
             ...basicStats,
@@ -272,6 +272,36 @@ export const useZcashAPI = () => {
   const getLatestBlocks = useCallback(
     async (limit: number = 10): Promise<Block[]> => {
       try {
+        // Optimization: Try bulk fetch first
+        const bulkData = await fetchZypherscan(`/blocks?limit=${limit}`);
+        let blocksRaw: any[] = [];
+
+        if (Array.isArray(bulkData)) {
+          blocksRaw = bulkData;
+        } else if (bulkData && Array.isArray(bulkData.blocks)) {
+          blocksRaw = bulkData.blocks;
+        } else if (bulkData && Array.isArray(bulkData.data)) {
+          blocksRaw = bulkData.data;
+        }
+
+        if (blocksRaw.length > 0) {
+          return blocksRaw.map((b: any) => ({
+            height: parseInt(b.height),
+            hash: b.hash,
+            version: b.version,
+            merkle_root: b.merkle_root,
+            timestamp:
+              b.timestamp && !isNaN(Number(b.timestamp))
+                ? new Date(Number(b.timestamp) * 1000).toISOString()
+                : new Date().toISOString(),
+            nonce: b.nonce,
+            difficulty: parseFloat(b.difficulty),
+            size: b.size,
+            tx_count: b.transaction_count || (b.tx ? b.tx.length : 0),
+            tx: normalizeTxIds(b),
+          }));
+        }
+
         const stats = await getNetworkStatus();
         if (!stats || !stats.height) return [];
 
@@ -281,7 +311,7 @@ export const useZcashAPI = () => {
         for (let i = 0; i < limit; i++) {
           const height = latestHeight - i;
           if (height < 0) break;
-          promises.push(fetchCipherscan(`/block/${height}`));
+          promises.push(fetchZypherscan(`/block/${height}`));
         }
 
         const results = await Promise.allSettled(promises);
@@ -290,7 +320,7 @@ export const useZcashAPI = () => {
         for (const result of results) {
           if (result.status === "fulfilled" && result.value) {
             const b = result.value;
-            // Block data from Cipherscan seems flat based on /block/{id} endpoint check locally if possible
+            // Block data from Zypherscan seems flat based on /block/{id} endpoint check locally if possible
             // Assuming standard fields
             if (b && b.height) {
               blocks.push({
@@ -298,7 +328,10 @@ export const useZcashAPI = () => {
                 hash: b.hash,
                 version: b.version,
                 merkle_root: b.merkle_root,
-                timestamp: new Date(Number(b.timestamp) * 1000).toISOString(),
+                timestamp:
+                  b.timestamp && !isNaN(Number(b.timestamp))
+                    ? new Date(Number(b.timestamp) * 1000).toISOString()
+                    : new Date().toISOString(),
                 nonce: b.nonce,
                 difficulty: parseFloat(b.difficulty),
                 size: b.size,
@@ -321,16 +354,16 @@ export const useZcashAPI = () => {
     async (limit: number = 10) => {
       // Fetch latest shielded transactions (mixed, fully shielded, etc.)
       const endpoint = `/tx/shielded?limit=${limit}`;
-      let data = await fetchCipherscan(endpoint);
+      let data = await fetchZypherscan(endpoint);
 
-      // Cipherscan returns { transactions: [...] }
+      // Zypherscan returns { transactions: [...] }
       if (data && data.transactions) {
         return data.transactions;
       }
 
       // Fallback or retry
       if (!data || !data.transactions || data.transactions.length === 0) {
-        data = await fetchCipherscan(`/tx/shielded?limit=${limit}`);
+        data = await fetchZypherscan(`/tx/shielded?limit=${limit}`);
         if (data && data.transactions) return data.transactions;
       }
 
@@ -348,7 +381,7 @@ export const useZcashAPI = () => {
       query.startsWith("zs") ||
       query.startsWith("u1")
     ) {
-      const addr = await fetchCipherscan(`/address/${query}`);
+      const addr = await fetchZypherscan(`/address/${query}`);
       if (addr && !addr.error) {
         return {
           success: true,
@@ -363,7 +396,7 @@ export const useZcashAPI = () => {
 
     // 2. Try as Block Height
     if (/^\d+$/.test(query)) {
-      const b = await fetchCipherscan(`/block/${query}`);
+      const b = await fetchZypherscan(`/block/${query}`);
       if (b) {
         return {
           success: true,
@@ -373,7 +406,10 @@ export const useZcashAPI = () => {
             hash: b.hash,
             version: b.version,
             merkle_root: b.merkle_root,
-            timestamp: new Date(Number(b.timestamp) * 1000).toISOString(),
+            timestamp:
+              b.timestamp && !isNaN(Number(b.timestamp))
+                ? new Date(Number(b.timestamp) * 1000).toISOString()
+                : new Date().toISOString(),
             nonce: b.nonce,
             difficulty: parseFloat(b.difficulty),
             size: b.size,
@@ -393,8 +429,8 @@ export const useZcashAPI = () => {
     // 3. Try as Block Hash or Transaction ID (both 64 chars)
     if (query.length === 64) {
       // A. Try Block Hash
-      const b = await fetchCipherscan(`/block/${query}`);
-      // Validate that the returned block hash actually matches the query (Cipherscan API might return latest block for invalid hash)
+      const b = await fetchZypherscan(`/block/${query}`);
+      // Validate that the returned block hash actually matches the query (Zypherscan API might return latest block for invalid hash)
       if (b && b.hash && b.hash.toLowerCase() === query.toLowerCase()) {
         return {
           success: true,
@@ -404,7 +440,10 @@ export const useZcashAPI = () => {
             hash: b.hash,
             version: b.version,
             merkle_root: b.merkle_root,
-            timestamp: new Date(Number(b.timestamp) * 1000).toISOString(),
+            timestamp:
+              b.timestamp && !isNaN(Number(b.timestamp))
+                ? new Date(Number(b.timestamp) * 1000).toISOString()
+                : new Date().toISOString(),
             nonce: b.nonce,
             difficulty: parseFloat(b.difficulty),
             size: b.size,
@@ -420,10 +459,10 @@ export const useZcashAPI = () => {
         };
       }
 
-      // B. Try Transaction ID (Preferred Cipherscan)
-      let t = await fetchCipherscan(`/tx/${query}`);
+      // B. Try Transaction ID (Preferred ZyperScan)
+      let t = await fetchZypherscan(`/tx/${query}`);
 
-      // Fallback: Zebra RPC for Mempool transactions not yet in Cipherscan
+      // Fallback: Zebra RPC for Mempool transactions not yet in ZyperScan
       if (!t) {
         try {
           t = await fetchRPC("getrawtransaction", [query, 1]);
@@ -438,7 +477,7 @@ export const useZcashAPI = () => {
           success: true,
           type: "transaction",
           result: {
-            // Pass through all original fields from Cipherscan API
+            // Pass through all original fields from Zypherscan API
             ...t,
             // Also include normalized fields for backwards compatibility
             txid: tNormalized.txid,
@@ -454,9 +493,10 @@ export const useZcashAPI = () => {
             vin: tNormalized.vin,
             vout: tNormalized.vout,
             size: tNormalized.size,
-            timestamp: tNormalized.time
-              ? new Date(Number(tNormalized.time) * 1000).toISOString()
-              : new Date().toISOString(),
+            timestamp:
+              tNormalized.time && !isNaN(Number(tNormalized.time))
+                ? new Date(Number(tNormalized.time) * 1000).toISOString()
+                : new Date().toISOString(),
             fee: tNormalized.fee,
             value_balance:
               tNormalized.value_balance || tNormalized.valueBalance,
@@ -475,9 +515,9 @@ export const useZcashAPI = () => {
   }, []);
 
   const getMempool = useCallback(async () => {
-    const data = await fetchCipherscan("/mempool");
+    const data = await fetchZypherscan("/mempool");
 
-    // Cipherscan response is object with transactions array
+    // Zypherscan response is object with transactions array
     if (data && Array.isArray(data.transactions)) {
       return {
         count: data.count || data.transactions.length,
@@ -494,7 +534,7 @@ export const useZcashAPI = () => {
   }, []);
 
   const getPrivacyStats = useCallback(async () => {
-    return await fetchCipherscan("/privacy-stats");
+    return await fetchZypherscan("/privacy-stats");
   }, []);
 
   const getZecPrice = useCallback(async (): Promise<ZecPrice | null> => {
@@ -510,7 +550,7 @@ export const useZcashAPI = () => {
   const getBlockchainInfo = getNetworkStatus;
 
   const getAddressDetails = useCallback(async (address: string) => {
-    return await fetchCipherscan(`/address/${address}`);
+    return await fetchZypherscan(`/address/${address}`);
   }, []);
 
   const decodeUnifiedAddress = useCallback(async (address: string) => {
@@ -541,7 +581,7 @@ export const useZcashAPI = () => {
   }, []);
 
   const getTransaction = useCallback(async (txid: string) => {
-    let t = await fetchCipherscan(`/tx/${txid}`);
+    let t = await fetchZypherscan(`/tx/${txid}`);
 
     if (t) {
       const tNormalized = normalizeTransaction(t);
@@ -554,9 +594,10 @@ export const useZcashAPI = () => {
         height: tNormalized.height
           ? parseInt(tNormalized.height)
           : tNormalized.blockheight || undefined,
-        timestamp: tNormalized.time
-          ? new Date(Number(tNormalized.time) * 1000).toISOString()
-          : new Date().toISOString(),
+        timestamp:
+          tNormalized.time && !isNaN(Number(tNormalized.time))
+            ? new Date(Number(tNormalized.time) * 1000).toISOString()
+            : new Date().toISOString(),
         value_balance: tNormalized.value_balance || tNormalized.valueBalance,
         vshielded_spend:
           tNormalized.shielded_spends || tNormalized.vShieldedSpend || 0,

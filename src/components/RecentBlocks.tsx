@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useZcashAPI, Block } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
@@ -20,30 +19,24 @@ const formatSize = (bytes?: number) => {
   return `${(bytes / 1024).toFixed(0)} KB`;
 };
 
+import { useQuery } from "@tanstack/react-query";
+
 export const RecentBlocks = () => {
   const { getLatestBlocks } = useZcashAPI();
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchBlocks = async (showRefreshIndicator = false) => {
-    if (showRefreshIndicator) setRefreshing(true);
-    else setLoading(true);
+  const {
+    data: blocks = [],
+    isLoading: loading,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ["recentBlocks"],
+    queryFn: () => getLatestBlocks(5),
+    refetchInterval: 30000,
+  });
 
-    const data = await getLatestBlocks(5);
-    setBlocks(data);
-
-    setLoading(false);
-    setRefreshing(false);
-  };
-
-  useEffect(() => {
-    fetchBlocks();
-
-    // Refresh every 30 seconds
-    const interval = setInterval(() => fetchBlocks(true), 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const refreshing = isRefetching;
+  const fetchBlocks = (force: boolean) => refetch();
 
   if (loading) {
     return (
