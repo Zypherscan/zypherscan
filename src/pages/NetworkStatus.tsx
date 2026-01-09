@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useZcashAPI, NetworkStats } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
@@ -55,26 +55,12 @@ const NetworkStatus = () => {
   const navigate = useNavigate();
   const { getNetworkStatus } = useZcashAPI();
   const { network } = useNetwork();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<NetworkStats | null>(null);
 
-  useEffect(() => {
-    const fetchStatus = async () => {
-      setLoading(true);
-      try {
-        const result = await getNetworkStatus();
-        setData(result);
-      } catch (error) {
-        console.error("Failed to fetch network status:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 30000); // 30s refresh
-    return () => clearInterval(interval);
-  }, [getNetworkStatus]);
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["networkStatus"],
+    queryFn: getNetworkStatus,
+    refetchInterval: 30000,
+  });
 
   if (loading && !data) {
     return (

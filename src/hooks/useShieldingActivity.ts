@@ -80,50 +80,67 @@ export const useShieldingActivity = () => {
 
           // 1. Sapling Activity
           // Prefer explicit valueBalanceSapling if available (standard in many indices)
-          if (
-            tx.valueBalanceSapling !== undefined &&
-            tx.valueBalanceSapling !== null
-          ) {
-            const vbS = Number(tx.valueBalanceSapling);
-            if (vbS < 0) sVal += Math.abs(vbS);
-            else uVal += vbS;
+          const saplingBalanceRaw =
+            tx.valueBalanceSapling !== undefined
+              ? Number(tx.valueBalanceSapling)
+              : tx.value_balance_sapling !== undefined
+              ? Number(tx.value_balance_sapling)
+              : null;
+
+          const saplingBalance =
+            saplingBalanceRaw !== null ? saplingBalanceRaw / 100000000 : null;
+
+          if (saplingBalance !== null) {
+            if (saplingBalance < 0) sVal += Math.abs(saplingBalance);
+            else uVal += saplingBalance;
           } else {
             // Fallback to legacy vShielded fields
-            // (Some APIs populate these for Sapling legacy support)
-            const saplingIn = Number(tx.vshielded_output || 0);
-            const saplingOut = Number(tx.vshielded_spend || 0);
+            // Assuming these are also in Zatoshis if valueBalance is
+            const saplingInRaw = Number(tx.vshielded_output || 0);
+            const saplingOutRaw = Number(tx.vshielded_spend || 0);
+
+            // Heuristic: If values are large (> 1000), assume Zatoshis and divide
+            // Otherwise assume ZEC. This handles inconsistent APIs.
+            // 1000 ZEC is a reasonable threshold (block reward is small).
+            const saplingIn =
+              saplingInRaw > 1000 ? saplingInRaw / 100000000 : saplingInRaw;
+            const saplingOut =
+              saplingOutRaw > 1000 ? saplingOutRaw / 100000000 : saplingOutRaw;
+
             if (saplingIn > 0) sVal += saplingIn;
             if (saplingOut > 0) uVal += saplingOut;
           }
 
           // 2. Orchard Activity
-          if (
-            tx.valueBalanceOrchard !== undefined &&
-            tx.valueBalanceOrchard !== null
-          ) {
-            const vbO = Number(tx.valueBalanceOrchard);
-            if (vbO < 0) sVal += Math.abs(vbO);
-            else uVal += vbO;
+          const orchardBalanceRaw =
+            tx.valueBalanceOrchard !== undefined
+              ? Number(tx.valueBalanceOrchard)
+              : tx.value_balance_orchard !== undefined
+              ? Number(tx.value_balance_orchard)
+              : null;
+
+          const orchardBalance =
+            orchardBalanceRaw !== null ? orchardBalanceRaw / 100000000 : null;
+
+          if (orchardBalance !== null) {
+            if (orchardBalance < 0) sVal += Math.abs(orchardBalance);
+            else uVal += orchardBalance;
           } else if (tx.active_pool === "orchard" || tx.hasOrchard) {
-            // Fallback if specific orchard field missing but generic value_balance exists and implies orchard
-            // Risk of double counting if value_balance overlaps with sapling, but usually safe if hasOrchard is true
-            // and we handled sapling above.
-            // However, strictly speaking, if valueBalanceOrchard is missing,
-            // we might look at generic value_balance ONLY if sapling was 0?
-            // Let's stick to explicit fields to be safe.
-            // User's example showed valueBalanceOrchard is present.
+            // Fallback if specific orchard field missing but generic value_balance exists
           }
 
-          // 3. Fallback for generic "value_balance" if specific fields are missing entirely
-          // This catches cases where API only gives a net "valueBalance"
+          // 3. Fallback for generic "value_balance" if specific fields are missing entirely or result in 0 activity
           if (
             sVal === 0 &&
             uVal === 0 &&
-            tx.value_balance !== undefined &&
-            tx.valueBalanceSapling === undefined &&
-            tx.valueBalanceOrchard === undefined
+            (tx.value_balance !== undefined || tx.valueBalance !== undefined)
           ) {
-            const vb = Number(tx.value_balance);
+            const vbRaw = Number(
+              tx.value_balance !== undefined
+                ? tx.value_balance
+                : tx.valueBalance
+            );
+            const vb = vbRaw / 100000000;
             if (vb < 0) sVal += Math.abs(vb);
             else uVal += vb;
           }

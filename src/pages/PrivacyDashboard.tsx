@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useZcashAPI, ShieldedTransaction } from "@/hooks/useZcashAPI";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -59,35 +60,25 @@ const PrivacyDashboard = () => {
   const { getPrivacyStats, getRecentShieldedTransactions, getBlockchainInfo } =
     useZcashAPI();
 
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<PrivacyStats | null>(null);
-  const [blockchainInfo, setBlockchainInfo] = useState<any>(null);
-  const [recentTxs, setRecentTxs] = useState<ShieldedTransaction[]>([]);
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["privacyStats"],
+    queryFn: getPrivacyStats,
+    refetchInterval: 60000,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [privacyData, chainInfo, recentShielded] = await Promise.all([
-          getPrivacyStats(),
-          getBlockchainInfo(),
-          getRecentShieldedTransactions(5),
-        ]);
+  const { data: blockchainInfo, isLoading: infoLoading } = useQuery({
+    queryKey: ["blockchainInfo"],
+    queryFn: getBlockchainInfo,
+    refetchInterval: 60000,
+  });
 
-        setStats(privacyData);
-        setBlockchainInfo(chainInfo);
-        setRecentTxs(recentShielded);
-      } catch (err) {
-        console.error("Failed to fetch privacy data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: recentTxs = [], isLoading: txsLoading } = useQuery({
+    queryKey: ["recentShieldedTransactions", 5],
+    queryFn: () => getRecentShieldedTransactions(5),
+    refetchInterval: 60000,
+  });
 
-    fetchData();
-    const interval = setInterval(fetchData, 60000); // Refresh every minute
-    return () => clearInterval(interval);
-  }, [getBlockchainInfo, getPrivacyStats, getRecentShieldedTransactions]);
+  const loading = statsLoading || infoLoading || txsLoading;
 
   // Derived metrics
   const totalTransactions = stats?.totals

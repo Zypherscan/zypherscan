@@ -81,6 +81,14 @@ export default defineConfig(({ mode }) => {
           target: MAINNET_API,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ""),
+          configure: (proxy, _options) => {
+            proxy.on("proxyReq", (proxyReq, _req, _res) => {
+              const apiKey = env.VITE_RPC_BACKEND_API_KEY || "";
+              if (apiKey) {
+                proxyReq.setHeader("X-API-KEY", apiKey);
+              }
+            });
+          },
         },
         "/zebra": {
           target: ZEBRA_API,

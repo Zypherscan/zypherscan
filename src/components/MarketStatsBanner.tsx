@@ -1,29 +1,29 @@
-import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useZcashAPI, NetworkStats, ZecPrice } from "@/hooks/useZcashAPI";
 import { DollarSign, Activity, Cpu, Globe } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export function MarketStatsBanner() {
   const { getZecPrice, getNetworkStatus, getPrivacyStats } = useZcashAPI();
-  const [zecPrice, setZecPrice] = useState<ZecPrice | null>(null);
-  const [networkStats, setNetworkStats] = useState<NetworkStats | null>(null);
-  const [privacyStats, setPrivacyStats] = useState<any | null>(null);
 
-  useEffect(() => {
-    const fetchMarketData = async () => {
-      const price = await getZecPrice();
-      setZecPrice(price);
-      const network = await getNetworkStatus();
-      setNetworkStats(network);
-      const privacy = await getPrivacyStats();
-      setPrivacyStats(privacy);
-    };
+  const { data: zecPrice } = useQuery<ZecPrice | null>({
+    queryKey: ["zecPrice"],
+    queryFn: getZecPrice,
+    refetchInterval: 60000,
+  });
 
-    fetchMarketData();
-    const interval = setInterval(fetchMarketData, 60000); // Update every minute
-    return () => clearInterval(interval);
-  }, [getZecPrice, getNetworkStatus, getPrivacyStats]);
+  const { data: networkStats } = useQuery<NetworkStats | null>({
+    queryKey: ["networkStatus"],
+    queryFn: getNetworkStatus,
+    refetchInterval: 60000,
+  });
+
+  const { data: privacyStats } = useQuery<any | null>({
+    queryKey: ["privacyStats"],
+    queryFn: getPrivacyStats,
+    refetchInterval: 60000,
+  });
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

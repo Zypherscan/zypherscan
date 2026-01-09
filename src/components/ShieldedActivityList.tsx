@@ -1,4 +1,3 @@
-import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,49 +61,41 @@ const getPoolInfo = (tx: ShieldedTransaction) => {
 
 import { useZcashAPI } from "@/hooks/useZcashAPI";
 
+import { useQuery } from "@tanstack/react-query";
+
 export const ShieldedActivityList = () => {
-  const [transactions, setTransactions] = useState<ShieldedTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const { getRecentShieldedTransactions } = useZcashAPI();
 
-  const fetchTxs = useCallback(
-    async (forceRefresh = false) => {
-      if (forceRefresh) setRefreshing(true);
-
-      try {
-        const data: any[] = await getRecentShieldedTransactions(5);
-
-        if (data) {
-          const shieldedTxs = data.map((tx: any) => ({
-            txid: tx.txid,
-            type: tx.type || "partial",
-            hasOrchard: tx.hasOrchard,
-            hasSapling: tx.hasSapling,
-            orchardActions: tx.orchardActions,
-            shieldedSpends: tx.shieldedSpends,
-            shieldedOutputs: tx.shieldedOutputs,
-            timestamp: tx.blockTime || tx.time || Date.now() / 1000,
-            block_height: tx.blockHeight || tx.height,
-            fee: tx.fee,
-          }));
-          setTransactions(shieldedTxs);
-        }
-      } catch (error) {
-        console.error("Failed to fetch shielded transactions:", error);
-      } finally {
-        if (forceRefresh) setRefreshing(false);
-        setLoading(false);
+  const {
+    data: transactions = [],
+    isLoading: loading,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ["recentShieldedTransactions", 5],
+    queryFn: async () => {
+      const data: any[] = await getRecentShieldedTransactions(5);
+      if (data) {
+        return data.map((tx: any) => ({
+          txid: tx.txid,
+          type: tx.type || "partial",
+          hasOrchard: tx.hasOrchard,
+          hasSapling: tx.hasSapling,
+          orchardActions: tx.orchardActions,
+          shieldedSpends: tx.shieldedSpends,
+          shieldedOutputs: tx.shieldedOutputs,
+          timestamp: tx.blockTime || tx.time || Date.now() / 1000,
+          block_height: tx.blockHeight || tx.height,
+          fee: tx.fee,
+        }));
       }
+      return [];
     },
-    [getRecentShieldedTransactions]
-  );
+    refetchInterval: 30000,
+  });
 
-  useEffect(() => {
-    fetchTxs();
-    const interval = setInterval(() => fetchTxs(true), 30000);
-    return () => clearInterval(interval);
-  }, [fetchTxs]);
+  const refreshing = isRefetching;
+  const fetchTxs = (force: boolean) => refetch();
 
   if (loading) {
     return (
