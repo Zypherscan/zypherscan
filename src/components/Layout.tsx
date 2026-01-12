@@ -40,6 +40,7 @@ interface LayoutProps {
 }
 
 import { NetworkActivityBanner } from "@/components/NetworkActivityBanner";
+import { InstallZucchiniBanner } from "@/components/InstallZucchiniBanner";
 
 export const Layout = ({ children }: LayoutProps) => {
   const { isConnected, viewingKey, disconnect, login } = useAuth();
@@ -120,6 +121,7 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
+      <InstallZucchiniBanner />
       <NetworkActivityBanner />
       <div className="w-full bg-accent/10 border-b border-accent/20 py-1.5 flex justify-center items-center">
         <SupportDialog>
