@@ -15,10 +15,11 @@ export const NetworkProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [network, setNetwork] = useState<NetworkType>(() => {
-    // Priority 1: Domain-based detection
     if (typeof window !== "undefined") {
-      if (window.location.hostname === "testnet.zypherscan.com")
-        return "testnet";
+      const hostname = window.location.hostname;
+      if (hostname === "testnet.zypherscan.com") return "testnet";
+      if (hostname === "zypherscan.com" || hostname === "www.zypherscan.com")
+        return "mainnet";
     }
 
     // Priority 2: Persisted selection (fallback / local dev)
