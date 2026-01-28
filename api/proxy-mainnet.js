@@ -2,6 +2,7 @@ export default async function handler(req, res) {
   // Origin validation - only allow requests from zypherscan.com
   const allowedOrigins = [
     "https://zypherscan.com",
+    "https://testnet.zypherscan.com",
     "https://www.zypherscan.com",
     "http://localhost:3000",
     "http://localhost:5173",
