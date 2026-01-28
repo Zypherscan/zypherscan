@@ -1,4 +1,4 @@
-# Zypherscan - Premium ZCash Privacy Explorer
+# Zypherscan - Premium Zcash Privacy Explorer
 
 **Zypherscan** is a high-performance, privacy-first blockchain explorer and shielded wallet companion for **Zcash**. It bridges the gap between public blockchain data and private user activity, allowing users to "unlock" and view their own **shielded transaction history**, balances, and encrypted memos using **Unified Viewing Keys (UVKs)** in a safe, view-only environment.
 

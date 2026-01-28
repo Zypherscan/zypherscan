@@ -1,7 +1,7 @@
 /**
  * Application configuration
  *
- * These settings control connections to ZCash infrastructure
+ * These settings control connections to Zcash infrastructure
  */
 
 export const config = {
@@ -23,7 +23,7 @@ export const config = {
   // App settings
   app: {
     name: "Zypherscan",
-    version: "1.0.0",
+    version: "1.1.0",
   },
 
   // Sync settings

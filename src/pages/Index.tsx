@@ -62,7 +62,7 @@ const Index = () => {
             <span className="w-2 h-2 bg-terminal-green rounded-full animate-pulse" />
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 animate-fade-in">
-            Explore ZCash
+            Explore Zcash
             <br />
             <span className="text-gradient glow-text">
               With Uncompromised Privacy

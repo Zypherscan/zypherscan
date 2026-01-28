@@ -401,7 +401,7 @@ const AddressDetails = () => {
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      ZCash shielded addresses use zero-knowledge proofs to
+                      Zcash shielded addresses use zero-knowledge proofs to
                       encrypt transaction data on the blockchain. This means
                       that while transactions are verified, the sender,
                       receiver, and amount remain private.

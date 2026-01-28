@@ -1,4 +1,4 @@
-// Utility types and functions for ZCash wallet data
+// Utility types and functions for Zcash wallet data
 export interface DecryptedTransaction {
   txid: string;
   timestamp: Date;

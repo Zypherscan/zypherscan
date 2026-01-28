@@ -4,11 +4,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ZCash Explorer Design System - Dark Cypherpunk Aesthetic */
+/* Zcash Explorer Design System - Dark Cypherpunk Aesthetic */
 
 @layer base {
   :root {
-    /* Core colors - Dark theme with ZCash orange accents */
+    /* Core colors - Dark theme with Zcash orange accents */
     --background: 220 15% 8%;
     --foreground: 35 100% 95%;
 

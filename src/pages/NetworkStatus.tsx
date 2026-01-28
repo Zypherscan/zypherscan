@@ -95,7 +95,7 @@ const NetworkStatus = () => {
           Network Statistics
         </h1>
         <p className="text-muted-foreground text-lg capitalize">
-          Real-time ZCash {network} metrics. Mining stats, network health, and
+          Real-time Zcash {network} metrics. Mining stats, network health, and
           blockchain data.
         </p>
       </div>

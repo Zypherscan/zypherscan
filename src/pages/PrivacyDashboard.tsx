@@ -163,11 +163,11 @@ const PrivacyDashboard = () => {
           <div className="flex items-center justify-center gap-2 mb-2">
             <Shield className="w-8 h-8 text-accent" />
             <h1 className="text-3xl font-bold tracking-tight">
-              ZCash Privacy Metrics
+              Zcash Privacy Metrics
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Live privacy statistics for the ZCash blockchain. Track shielded
+            Live privacy statistics for the Zcash blockchain. Track shielded
             adoption, privacy score, and transparency trends.
           </p>
         </div>
