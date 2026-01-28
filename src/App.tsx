@@ -14,6 +14,7 @@ import DecryptTool from "./pages/DecryptTool";
 import Mempool from "./pages/Mempool";
 import NetworkStatus from "./pages/NetworkStatus";
 import RecentBlocks from "./pages/RecentBlocks";
+import ZECFlow from "./pages/ZECFlow";
 import NotFound from "./pages/NotFound";
 
 import { Layout } from "./components/Layout";
@@ -52,6 +53,7 @@ const App = () => (
                     <Route path="/mempool" element={<Mempool />} />
                     <Route path="/network" element={<NetworkStatus />} />
                     <Route path="/blocks" element={<RecentBlocks />} />
+                    <Route path="/zecflow" element={<ZECFlow />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

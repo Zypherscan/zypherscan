@@ -1,17 +1,18 @@
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useZcashAPI, NetworkStats, ZecPrice } from "@/hooks/useZcashAPI";
+import { useZcashAPI, NetworkStats } from "@/hooks/useZcashAPI";
 import { DollarSign, Activity, Cpu, Globe } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useNetwork } from "@/contexts/NetworkContext";
 
 export function MarketStatsBanner() {
-  const { getZecPrice, getNetworkStatus, getPrivacyStats } = useZcashAPI();
+  const { getNetworkStatus, getPrivacyStats } = useZcashAPI();
+  const { zecPrice: contextZecPrice } = useNetwork();
 
-  const { data: zecPrice } = useQuery<ZecPrice | null>({
-    queryKey: ["zecPrice"],
-    queryFn: getZecPrice,
-    refetchInterval: 60000,
-  });
+  // Map to expected format
+  const zecPrice = contextZecPrice
+    ? { usd: contextZecPrice.usd, usd_24h_change: contextZecPrice.change24h }
+    : null;
 
   const { data: networkStats } = useQuery<NetworkStats | null>({
     queryKey: ["networkStatus"],

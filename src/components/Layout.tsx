@@ -15,6 +15,9 @@ import {
   Settings,
   LayoutDashboard,
   Copy,
+  Globe,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -41,14 +44,20 @@ interface LayoutProps {
 
 import { NetworkActivityBanner } from "@/components/NetworkActivityBanner";
 import { InstallZucchiniBanner } from "@/components/InstallZucchiniBanner";
+import { MatrixBackground } from "@/components/MatrixBackground";
 
 export const Layout = ({ children }: LayoutProps) => {
   const { isConnected, viewingKey, disconnect, login } = useAuth();
-  const { network, setNetwork } = useNetwork();
+  const { network, setNetwork, zecPrice: contextZecPrice } = useNetwork();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toast } = useToast();
+
+  // Use price from NetworkContext (already fetched there) - map to expected format
+  const zecPrice = contextZecPrice
+    ? { usd: contextZecPrice.usd, usd_24h_change: contextZecPrice.change24h }
+    : null;
 
   const handleConnect = async () => {
     if (window.zucchini) {
@@ -120,31 +129,133 @@ export const Layout = ({ children }: LayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans flex flex-col">
-      <InstallZucchiniBanner />
-      <NetworkActivityBanner />
-      <div className="w-full bg-accent/10 border-b border-accent/20 py-1.5 flex justify-center items-center">
-        <SupportDialog>
-          <button className="text-[11px] text-accent tracking-wider font-medium hover:text-accent/80 transition-colors flex items-center gap-1.5 text-center leading-tight md:leading-normal">
-            <span>
-              Enjoying Zypherscan? <br className="md:hidden" />
-              <u>Help us</u> Keep this service alive!
-            </span>
-            <GiReceiveMoney className="w-3.5 h-3.5 flex-shrink-0" />
-          </button>
-        </SupportDialog>
+    <div className="min-h-screen bg-background text-foreground font-sans flex flex-col overflow-x-hidden relative">
+      {/* Matrix Background - Global */}
+      <MatrixBackground opacity={0.1} />
+
+      {/* Full-width Zucchini Banner at the very top */}
+      <div className="hidden md:block relative z-10">
+        <InstallZucchiniBanner />
       </div>
-      <header className="sticky top-0 z-50 border-b border-border/20 bg-background/95 backdrop-blur-md">
+
+      <div className="w-full bg-background/60 backdrop-blur-md text-foreground py-1 border-b border-white/5 relative z-10">
+        <div className="container mx-auto px-4">
+          {/* Desktop Layout: 3 columns */}
+          <div className="hidden md:grid md:grid-cols-3 h-8 items-center text-[10px] md:text-xs font-bold uppercase tracking-tight">
+            {/* Left: Live Status + ZEC Price */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-terminal-green animate-pulse-live shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+                <span className="text-muted-foreground">Live</span>
+              </div>
+              {zecPrice ? (
+                <div className="flex items-center gap-1.5 border-l border-border/40 pl-3">
+                  <span className="font-mono text-foreground">
+                    ${zecPrice.usd.toFixed(2)}
+                  </span>
+                  <div
+                    className={`flex items-center ${zecPrice.usd_24h_change >= 0 ? "text-terminal-green" : "text-red-500"}`}
+                  >
+                    {zecPrice.usd_24h_change >= 0 ? (
+                      <TrendingUp className="w-2.5 h-2.5" />
+                    ) : (
+                      <TrendingDown className="w-2.5 h-2.5" />
+                    )}
+                    <span>{Math.abs(zecPrice.usd_24h_change).toFixed(1)}%</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 border-l border-border/40 pl-3">
+                  <div className="h-3 w-14 bg-muted-foreground/20 rounded animate-pulse" />
+                  <div className="h-3 w-8 bg-muted-foreground/20 rounded animate-pulse" />
+                </div>
+              )}
+            </div>
+
+            {/* Center: Network Activity */}
+            <div className="flex justify-center">
+              <NetworkActivityBanner variant="minimal" />
+            </div>
+
+            {/* Right: Support */}
+            <div className="flex justify-end">
+              <SupportDialog>
+                <button className="text-xs font-bold hover:text-accent transition-colors flex items-center gap-1.5">
+                  <span>SUPPORT US</span>
+                  <GiReceiveMoney className="w-3.5 h-3.5" />
+                </button>
+              </SupportDialog>
+            </div>
+          </div>
+
+          {/* Mobile Layout: 2 rows */}
+          <div className="md:hidden flex flex-col gap-1 py-1">
+            {/* Row 1: Live Status + ZEC Price + Support */}
+            <div className="h-6 flex items-center justify-between text-xs font-bold uppercase tracking-tight">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-terminal-green animate-pulse-live shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+                  <span className="text-muted-foreground">Live</span>
+                </div>
+                {zecPrice ? (
+                  <div className="flex items-center gap-1.5 border-l border-border/40 pl-2">
+                    <span className="font-mono text-foreground">
+                      ${zecPrice.usd.toFixed(2)}
+                    </span>
+                    <div
+                      className={`flex items-center ${zecPrice.usd_24h_change >= 0 ? "text-terminal-green" : "text-red-500"}`}
+                    >
+                      {zecPrice.usd_24h_change >= 0 ? (
+                        <TrendingUp className="w-2.5 h-2.5" />
+                      ) : (
+                        <TrendingDown className="w-2.5 h-2.5" />
+                      )}
+                      <span>
+                        {Math.abs(zecPrice.usd_24h_change).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 border-l border-border/40 pl-2">
+                    <div className="h-3 w-14 bg-muted-foreground/20 rounded animate-pulse" />
+                    <div className="h-3 w-8 bg-muted-foreground/20 rounded animate-pulse" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <SupportDialog>
+                  <button className="text-xs font-bold hover:text-accent transition-colors flex items-center gap-1.5">
+                    <span>SUPPORT</span>
+                    <GiReceiveMoney className="w-3.5 h-3.5" />
+                  </button>
+                </SupportDialog>
+              </div>
+            </div>
+
+            {/* Row 2: Network Stats (Shielded/Unshielded) */}
+            <div className="h-6 flex items-center justify-center w-full text-xs font-medium">
+              <NetworkActivityBanner variant="minimal" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <header className="border-b border-white/5 bg-background/80 backdrop-blur-xl relative z-10">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="Logo" className="w-7 h-7" />
-              <div className="flex flex-col leading-none">
-                <span className="text-lg font-bold tracking-wide text-foreground">
-                  ZYPHERSCAN
-                </span>
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="relative">
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="w-8 h-8 transition-transform group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-accent/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
+              <span className="text-lg font-bold tracking-tighter text-foreground group-hover:text-accent transition-colors">
+                ZYPHERSCAN
+              </span>
             </Link>
             {/* Network Badge */}
             <DropdownMenu>
@@ -203,6 +314,11 @@ export const Layout = ({ children }: LayoutProps) => {
                 align="end"
                 className="bg-popover border-border/20"
               >
+                {network === "mainnet" && (
+                  <DropdownMenuItem onClick={() => navigate("/zecflow")}>
+                    ZEC Flow
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => navigate("/mempool")}>
                   Mempool
                 </DropdownMenuItem>
@@ -225,13 +341,17 @@ export const Layout = ({ children }: LayoutProps) => {
 
             {isConnected ? (
               <div className="flex items-center gap-4">
-                <Link
-                  to="/dashboard"
-                  className={`text-sm font-medium ${isActive("/dashboard")}`}
-                >
-                  Dashboard
-                </Link>
-                <div className="h-4 w-px bg-border/30" />
+                {network === "mainnet" && (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      className={`text-sm font-medium ${isActive("/dashboard")}`}
+                    >
+                      Dashboard
+                    </Link>
+                    <div className="h-4 w-px bg-border/30" />
+                  </>
+                )}
                 <div className="flex items-center gap-2 pl-2">
                   <span className="text-xs font-mono text-muted-foreground bg-accent/5 px-2 py-1 rounded border border-accent/10">
                     {truncateKey(viewingKey)}
@@ -246,7 +366,7 @@ export const Layout = ({ children }: LayoutProps) => {
                   </Button>
                 </div>
               </div>
-            ) : (
+            ) : network === "mainnet" ? (
               <Button
                 size="sm"
                 onClick={handleConnect}
@@ -255,7 +375,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 <Wallet className="w-4 h-4 mr-2" />
                 Connect
               </Button>
-            )}
+            ) : null}
           </nav>
 
           {/* Mobile Menu */}
@@ -275,13 +395,13 @@ export const Layout = ({ children }: LayoutProps) => {
             >
               <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
               <div className="flex flex-col h-full bg-background">
-                <div className="p-6 border-b border-border/10">
+                <div className="p-6 pt-12 border-b border-border/10">
                   <div className="flex items-center gap-2 mb-6">
                     <img src="/logo.png" alt="Logo" className="w-8 h-8" />
                     <span className="text-xl font-bold tracking-wide text-foreground flex-1">
                       ZYPHERSCAN
                     </span>
-                    <div className="md:hidden">
+                    <div className="md:hidden mr-2">
                       <ModeToggle />
                     </div>
                   </div>
@@ -335,16 +455,30 @@ export const Layout = ({ children }: LayoutProps) => {
                     <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Tools
                     </div>
-                    <button
-                      onClick={() => {
-                        navigate("/dashboard");
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-accent" />
-                      Dashboard
-                    </button>
+                    {network === "mainnet" && (
+                      <button
+                        onClick={() => {
+                          navigate("/zecflow");
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                      >
+                        <Globe className="w-4 h-4 text-accent" />
+                        ZEC Flow
+                      </button>
+                    )}
+                    {network === "mainnet" && (
+                      <button
+                        onClick={() => {
+                          navigate("/dashboard");
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-accent" />
+                        Dashboard
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         navigate("/mempool");
@@ -426,7 +560,7 @@ export const Layout = ({ children }: LayoutProps) => {
                         Disconnect
                       </Button>
                     </div>
-                  ) : (
+                  ) : network === "mainnet" ? (
                     <Button
                       className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
                       onClick={handleConnect}
@@ -434,7 +568,7 @@ export const Layout = ({ children }: LayoutProps) => {
                       <Wallet className="w-4 h-4 mr-2" />
                       Connect
                     </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </SheetContent>
@@ -442,10 +576,10 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 relative z-10">{children}</main>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card/20">
+      <footer className="border-t border-border bg-card/20 relative z-10">
         <div className="container px-6 py-12">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="flex items-center gap-4 justify-center w-full">

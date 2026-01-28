@@ -43,7 +43,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
     "all" | "incoming" | "outgoing" | "internal"
   >("all");
   const [poolFilter, setPoolFilter] = useState<"all" | "sapling" | "orchard">(
-    "all"
+    "all",
   );
   const [expandedTx, setExpandedTx] = useState<string | null>(null);
   const [copiedTxid, setCopiedTxid] = useState<string | null>(null);
@@ -128,7 +128,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
   };
 
   return (
-    <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10 overflow-hidden">
+    <Card className="card-glow bg-card/50 border-accent/10 overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-border">
         <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -246,15 +246,15 @@ export function TransactionList({ transactions }: TransactionListProps) {
                             tx.type === "incoming"
                               ? "text-terminal-green"
                               : tx.type === "outgoing"
-                              ? "text-red-400"
-                              : "text-foreground"
+                                ? "text-red-400"
+                                : "text-foreground"
                           }`}
                         >
                           {tx.type === "incoming"
                             ? "+"
                             : tx.type === "outgoing"
-                            ? ""
-                            : ""}
+                              ? ""
+                              : ""}
                           {formatZEC(tx.amount)} ZEC
                         </p>
                         <p className="text-xs text-muted-foreground flex items-center justify-end gap-1">

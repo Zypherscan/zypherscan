@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,19 @@ export const SearchBar = ({
   const { searchBlockchain } = useZcashAPI();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,11 +98,12 @@ export const SearchBar = ({
     >
       <div className="relative group">
         <Search
-          className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-accent ${
+          className={`absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-accent z-10 ${
             isHeader ? "h-4 w-4" : "h-5 w-5"
           }`}
         />
         <Input
+          ref={inputRef}
           type="text"
           placeholder={
             isHeader
@@ -101,10 +115,17 @@ export const SearchBar = ({
           disabled={loading}
           className={`${
             isHeader
-              ? "pl-10 pr-12 py-2 h-10 text-sm bg-muted/50 border-accent/10 focus:border-accent/40"
+              ? "pl-10 pr-16 py-2 h-10 text-sm bg-muted/50 border-accent/10 focus:border-accent/40"
               : "pl-12 pr-32 py-6 text-sm bg-card/50 backdrop-blur-sm border-accent/20 focus:border-accent"
           } font-mono transition-all`}
         />
+        {isHeader && (
+          <div className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none">
+            <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </div>
+        )}
         <Button
           type="submit"
           disabled={loading || !searchQuery.trim()}

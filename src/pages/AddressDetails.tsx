@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useZcashAPI } from "@/hooks/useZcashAPI";
+import { useNetwork } from "@/contexts/NetworkContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,14 +62,16 @@ interface AddressTransaction {
 const AddressDetails = () => {
   const { address } = useParams<{ address: string }>();
   const navigate = useNavigate();
-  const { getAddressDetails, getZecPrice, decodeUnifiedAddress } =
-    useZcashAPI();
+  const { getAddressDetails, decodeUnifiedAddress } = useZcashAPI();
+  const { zecPrice: contextZecPrice } = useNetwork();
+
+  // Use price from NetworkContext
+  const zecPrice = contextZecPrice?.usd || null;
 
   const [details, setDetails] = useState<AddressDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedAddress, setCopiedAddress] = useState(false);
-  const [zecPrice, setZecPrice] = useState<number | null>(null);
   const [decodedUA, setDecodedUA] = useState<{
     orchard?: string;
     sapling?: string;
@@ -107,8 +110,8 @@ const AddressDetails = () => {
             balance: addrData.balanceZat
               ? addrData.balanceZat / 100000000
               : addrData.balance
-              ? addrData.balance / 100000000
-              : 0,
+                ? addrData.balance / 100000000
+                : 0,
             tx_count:
               addrData.tx_count ||
               addrData.transaction_count ||
@@ -153,7 +156,7 @@ const AddressDetails = () => {
         }
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Failed to load address details"
+          err instanceof Error ? err.message : "Failed to load address details",
         );
       } finally {
         setLoading(false);
@@ -162,20 +165,6 @@ const AddressDetails = () => {
 
     fetchDetails();
   }, [address, getAddressDetails, decodeUnifiedAddress]);
-
-  useEffect(() => {
-    const fetchPrice = async () => {
-      try {
-        const priceData = await getZecPrice();
-        if (priceData) {
-          setZecPrice(priceData.usd);
-        }
-      } catch (err) {
-        console.error("Failed to fetch ZEC price:", err);
-      }
-    };
-    fetchPrice();
-  }, [getZecPrice]);
 
   const handleCopyAddress = async () => {
     if (!address) return;
@@ -228,7 +217,7 @@ const AddressDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-20 pt-8">
+      <div className="min-h-screen pb-20 pt-8">
         <div className="container px-4 max-w-7xl mx-auto space-y-6">
           <Skeleton className="h-12 w-1/3" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -244,7 +233,7 @@ const AddressDetails = () => {
 
   if (error || !details) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 text-center bg-card/40 border-destructive/30 max-w-md">
           <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
           <p className="text-xl font-bold text-destructive mb-2">
@@ -266,7 +255,7 @@ const AddressDetails = () => {
     addrType === "SAPLING (SHIELDED)" || addrType === "UNIFIED";
 
   return (
-    <div className="min-h-screen bg-background pb-20 pt-8">
+    <div className="min-h-screen pb-20 pt-8">
       <main className="container px-4 md:px-6 max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div>
@@ -301,7 +290,7 @@ const AddressDetails = () => {
 
         {/* Decoded Unified Address Components */}
         {decodedUA && (
-          <div className="mb-6 p-6 bg-card border border-border rounded-lg">
+          <div className="mb-6 p-6 bg-card/50 border border-white/10 rounded-lg">
             <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <Layers className="w-5 h-5 text-accent" /> Unified Address
               Receivers
@@ -381,7 +370,7 @@ const AddressDetails = () => {
                     className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => {
                       navigator.clipboard.writeText(
-                        decodedUA.transparent || ""
+                        decodedUA.transparent || "",
                       );
                       toast.success("Transparent receiver copied");
                     }}
@@ -396,7 +385,7 @@ const AddressDetails = () => {
 
         {isShieldedAddress ? (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-            <Card className="p-8 bg-card border-border border-l-4 border-l-terminal-green">
+            <Card className="p-8 bg-card/50 border-white/10 border-l-4 border-l-terminal-green">
               <div className="flex flex-col gap-6">
                 <div>
                   <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center gap-2">
@@ -472,7 +461,7 @@ const AddressDetails = () => {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Balance */}
-              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card/50 border-white/10 relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full justify-between gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Wallet className="w-4 h-4" /> ZEC Balance
@@ -486,7 +475,7 @@ const AddressDetails = () => {
               </Card>
 
               {/* Value */}
-              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card/50 border-white/10 relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full justify-between gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Database className="w-4 h-4" /> ZEC Value
@@ -509,7 +498,7 @@ const AddressDetails = () => {
               </Card>
 
               {/* Type & Stats */}
-              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card/50 border-white/10 relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Shield className="w-4 h-4" /> Address Type
@@ -526,7 +515,7 @@ const AddressDetails = () => {
               </Card>
 
               {/* Total Txs */}
-              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card/50 border-white/10 relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Database className="w-4 h-4" /> Total Transactions
@@ -538,7 +527,7 @@ const AddressDetails = () => {
               </Card>
 
               {/* First Tx */}
-              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card/50 border-white/10 relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Clock className="w-4 h-4" /> First Transaction
@@ -564,7 +553,7 @@ const AddressDetails = () => {
               </Card>
 
               {/* Latest Tx */}
-              <Card className="p-6 bg-card border-border relative overflow-hidden group hover:border-accent/30 transition-colors">
+              <Card className="p-6 bg-card/50 border-white/10 relative overflow-hidden group hover:border-accent/30 transition-colors">
                 <div className="flex flex-col h-full gap-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
                     <Clock className="w-4 h-4" /> Latest Transaction
@@ -598,7 +587,7 @@ const AddressDetails = () => {
                   (Latest {details.transactions?.length || 0})
                 </span>
               </h2>
-              <div className="rounded-lg border border-border bg-card overflow-hidden">
+              <div className="rounded-lg border border-white/10 bg-card/50 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-muted/40 text-xs uppercase text-muted-foreground font-medium tracking-wider">

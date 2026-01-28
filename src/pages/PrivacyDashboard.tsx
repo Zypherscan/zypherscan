@@ -121,7 +121,7 @@ const PrivacyDashboard = () => {
     if (!ts) return "N/A";
     try {
       const date = new Date(
-        typeof ts === "number" && ts < 10000000000 ? ts * 1000 : ts
+        typeof ts === "number" && ts < 10000000000 ? ts * 1000 : ts,
       );
       if (isNaN(date.getTime())) return "N/A";
       return date.toLocaleTimeString([], {
@@ -141,14 +141,14 @@ const PrivacyDashboard = () => {
 
   if (loading && !stats) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       <main className="container px-6 py-8">
         <button
           onClick={() => navigate(-1)}
@@ -175,7 +175,7 @@ const PrivacyDashboard = () => {
         {/* Top Section: Score & Recent TXs */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Privacy Score Card */}
-          <Card className="lg:col-span-1 bg-card border-border p-8 flex flex-col justify-center items-center text-center relative overflow-hidden">
+          <Card className="lg:col-span-1 bg-card/50 border-white/10 p-8 flex flex-col justify-center items-center text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-accent opacity-50"></div>
             <div className="z-10 w-full">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -208,7 +208,7 @@ const PrivacyDashboard = () => {
           </Card>
 
           {/* Recent Shielded Transactions */}
-          <Card className="lg:col-span-2 bg-card border-border p-0 overflow-hidden flex flex-col">
+          <Card className="lg:col-span-2 bg-card/50 border-white/10 p-0 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-purple-400" />
@@ -277,7 +277,7 @@ const PrivacyDashboard = () => {
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-card border-border p-5">
+          <Card className="bg-card/50 border-white/10 p-5">
             <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase tracking-wider">
               <Lock className="w-3 h-3" /> Shielded TX %
             </div>
@@ -289,7 +289,7 @@ const PrivacyDashboard = () => {
             </p>
           </Card>
 
-          <Card className="bg-card border-border p-5">
+          <Card className="bg-card/50 border-white/10 p-5">
             <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase tracking-wider">
               <PieChart className="w-3 h-3" /> Supply Shielded
             </div>
@@ -299,13 +299,13 @@ const PrivacyDashboard = () => {
             <p className="text-xs text-muted-foreground">
               {blockchainInfo?.supply?.totalShielded
                 ? `${(blockchainInfo.supply.totalShielded / 1000000).toFixed(
-                    2
+                    2,
                   )}M / ${21}M`
                 : "Loading..."}
             </p>
           </Card>
 
-          <Card className="bg-card border-border p-5">
+          <Card className="bg-card/50 border-white/10 p-5">
             <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase tracking-wider">
               <TrendingUp className="w-3 h-3" /> Adoption Trend
             </div>
@@ -315,7 +315,7 @@ const PrivacyDashboard = () => {
             <p className="text-xs text-muted-foreground">30 Day Avg</p>
           </Card>
 
-          <Card className="bg-card border-border p-5">
+          <Card className="bg-card/50 border-white/10 p-5">
             <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase tracking-wider">
               <Eye className="w-3 h-3" /> Fully Shielded
             </div>
@@ -331,7 +331,7 @@ const PrivacyDashboard = () => {
         {/* Transaction Types & Pool Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Transaction Types */}
-          <Card className="bg-card border-border p-6">
+          <Card className="bg-card/50 border-white/10 p-6">
             <h3 className="text-sm font-medium text-foreground mb-6 flex items-center gap-2">
               <Layers className="w-4 h-4 text-muted-foreground" /> Transaction
               Types
@@ -375,7 +375,7 @@ const PrivacyDashboard = () => {
           </Card>
 
           {/* Shielded Pool Breakdown */}
-          <Card className="bg-card border-border p-6">
+          <Card className="bg-card/50 border-white/10 p-6">
             <h3 className="text-sm font-medium text-foreground mb-6 flex items-center gap-2">
               <PieChart className="w-4 h-4 text-muted-foreground" /> Shielded
               Pool Breakdown
@@ -392,7 +392,7 @@ const PrivacyDashboard = () => {
                 <div className="text-right">
                   <div className="text-sm font-mono text-foreground">
                     {((blockchainInfo?.supply?.sapling || 0) / 1000000).toFixed(
-                      2
+                      2,
                     )}
                     M ZEC
                   </div>
@@ -409,7 +409,7 @@ const PrivacyDashboard = () => {
                 <div className="text-right">
                   <div className="text-sm font-mono text-foreground">
                     {((blockchainInfo?.supply?.sprout || 0) / 1000000).toFixed(
-                      3
+                      3,
                     )}
                     M ZEC
                   </div>
@@ -426,7 +426,7 @@ const PrivacyDashboard = () => {
                 <div className="text-right">
                   <div className="text-sm font-mono text-foreground">
                     {((blockchainInfo?.supply?.orchard || 0) / 1000000).toFixed(
-                      3
+                      3,
                     )}
                     M ZEC
                   </div>
@@ -449,7 +449,7 @@ const PrivacyDashboard = () => {
         </div>
 
         {/* Adoption Chart */}
-        <Card className="bg-card border-border p-6">
+        <Card className="bg-card/50 backdrop-blur-sm border-white/10 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-foreground flex items-center gap-2">

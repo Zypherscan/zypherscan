@@ -90,7 +90,7 @@ export function QuickStats({ analytics, transactions }: QuickStatsProps) {
       {stats.map((stat, i) => (
         <Card
           key={i}
-          className={`backdrop-blur-sm p-4 ${
+          className={`p-4 ${
             analytics
               ? "card-glow bg-card/50 border-accent/10"
               : "bg-card/30 border-border/50"

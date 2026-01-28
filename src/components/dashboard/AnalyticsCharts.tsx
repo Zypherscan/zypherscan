@@ -24,7 +24,7 @@ interface AnalyticsChartsProps {
 export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
   if (!analytics) {
     return (
-      <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10 p-6 h-80 flex items-center justify-center">
+      <Card className="card-glow bg-card/50 border-accent/10 p-6 h-80 flex items-center justify-center">
         <p className="text-muted-foreground">No analytics data available</p>
       </Card>
     );
@@ -58,7 +58,7 @@ export function AnalyticsCharts({ analytics }: AnalyticsChartsProps) {
   };
 
   return (
-    <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10">
+    <Card className="card-glow bg-card/50 border-accent/10">
       <Tabs defaultValue="volume" className="w-full">
         <div className="flex items-center justify-between p-6 pb-4 border-b border-border">
           <div>

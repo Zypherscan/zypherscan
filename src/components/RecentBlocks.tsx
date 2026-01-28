@@ -84,7 +84,7 @@ export const RecentBlocks = () => {
             to={`/block/${block.height}`}
             className="w-full"
           >
-            <Card className="card-glow bg-card/50 backdrop-blur-sm p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10 group">
+            <Card className="card-glow bg-card/50 p-4 hover:bg-card/70 transition-all cursor-pointer border-accent/10 group">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
                   <div className="flex flex-col items-center justify-center rounded-lg bg-accent/10 border border-accent/20 group-hover:bg-accent/20 transition-colors shrink-0">

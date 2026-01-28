@@ -12,6 +12,7 @@ export interface Block {
   size?: number;
   tx_count: number;
   tx?: string[];
+  value?: number;
 }
 
 export interface ShieldedTransaction {
@@ -44,13 +45,26 @@ const normalizeTransaction = (tx: any) => {
   // Normalize inputs (vin)
   if (tx.inputs && !tx.vin) {
     normalized.vin = tx.inputs.map((input: any) => ({
-      txid: input.prevout_hash || input.txid, // Handle varying names
-      vout: input.prevout_n !== undefined ? input.prevout_n : input.vout,
+      txid: input.prev_txid || input.prevout_hash || input.txid, // Handle varying names
+      vout:
+        input.prev_vout !== undefined
+          ? input.prev_vout
+          : input.prevout_n !== undefined
+            ? input.prevout_n
+            : input.vout,
       scriptSig: input.scriptSig,
       sequence: input.sequence,
       // If it's a coinbase/empty input from indexer
       coinbase: input.coinbase,
-      value: input.value ? parseInt(input.value) / 100000000 : undefined,
+      // Value can be in zatoshis (number) or already in ZEC (string/number)
+      value: input.value
+        ? typeof input.value === "number" && input.value > 1000000
+          ? input.value / 100000000 // Convert zatoshis to ZEC
+          : typeof input.value === "string"
+            ? parseFloat(input.value) / 100000000
+            : input.value
+        : undefined,
+      address: input.address || input.prevout_address, // Extract address
     }));
   }
 
@@ -299,6 +313,8 @@ export const useZcashAPI = () => {
             size: b.size,
             tx_count: b.transaction_count || (b.tx ? b.tx.length : 0),
             tx: normalizeTxIds(b),
+            // Capture any potential value fields for Whale Ticker
+            value: b.value || b.amount || b.total_value || b.total_amount || 0,
           }));
         }
 
@@ -320,8 +336,6 @@ export const useZcashAPI = () => {
         for (const result of results) {
           if (result.status === "fulfilled" && result.value) {
             const b = result.value;
-            // Block data from Zypherscan seems flat based on /block/{id} endpoint check locally if possible
-            // Assuming standard fields
             if (b && b.height) {
               blocks.push({
                 height: parseInt(b.height),
@@ -336,7 +350,9 @@ export const useZcashAPI = () => {
                 difficulty: parseFloat(b.difficulty),
                 size: b.size,
                 tx_count: b.transaction_count || (b.tx ? b.tx.length : 0),
-                tx: normalizeTxIds(b), // Include transaction IDs
+                tx: normalizeTxIds(b),
+                value:
+                  b.value || b.amount || b.total_value || b.total_amount || 0,
               });
             }
           }
@@ -347,7 +363,7 @@ export const useZcashAPI = () => {
         return [];
       }
     },
-    [getNetworkStatus]
+    [getNetworkStatus],
   );
 
   const getRecentShieldedTransactions = useCallback(
@@ -369,7 +385,7 @@ export const useZcashAPI = () => {
 
       return [];
     },
-    []
+    [],
   );
 
   const searchBlockchain = useCallback(async (query: string) => {
@@ -570,7 +586,7 @@ export const useZcashAPI = () => {
             "x-api-key": apiKey || "",
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       if (!response.ok) return null;
       return await response.json();

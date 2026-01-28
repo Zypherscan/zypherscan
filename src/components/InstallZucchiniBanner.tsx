@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { X, Download, Wallet } from "lucide-react";
 
-export const InstallZucchiniBanner = () => {
+interface InstallZucchiniBannerProps {
+  variant?: "default" | "minimal";
+}
+
+export const InstallZucchiniBanner = ({
+  variant = "default",
+}: InstallZucchiniBannerProps) => {
   const [isVisible, setIsVisible] = useState(true);
   const [hasWallet, setHasWallet] = useState(true);
 
@@ -22,8 +28,13 @@ export const InstallZucchiniBanner = () => {
 
   if (!isVisible || hasWallet) return null;
 
+  // Minimal variant: don't show anything in the top bar, this banner only shows at the top
+  if (variant === "minimal") {
+    return null;
+  }
+
   return (
-    <div className="relative isolate flex items-center gap-x-6 overflow-hidden bg-background px-6 py-2.5 sm:px-3.5 sm:before:flex-1 border-b border-green-500/20 bg-green-500/5 animate-in slide-in-from-top duration-500">
+    <div className="relative z-10 isolate flex items-center gap-x-6 overflow-hidden bg-background px-6 py-2.5 sm:px-3.5 sm:before:flex-1 border-b border-green-500/20 bg-green-500/5 animate-in slide-in-from-top duration-500">
       <div
         className="absolute left-[max(-7rem,calc(50%-52rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"
         aria-hidden="true"
@@ -48,7 +59,7 @@ export const InstallZucchiniBanner = () => {
           <span className="hidden sm:inline" aria-hidden="true">
             &middot;
           </span>
-          <span className="text-muted-foreground">
+          <span className="text-muted-foreground hidden sm:inline">
             Connect with Zucchini Wallet for a privacy-first experience.
           </span>
         </p>
@@ -65,7 +76,7 @@ export const InstallZucchiniBanner = () => {
       <div className="flex flex-1 justify-end">
         <button
           type="button"
-          className="-m-3 p-3 focus-visible:outline-offset-[-4px] hover:bg-green-500/5 rounded-full transition-colors"
+          className="p-2 focus-visible:outline-offset-[-4px] hover:bg-green-500/10 rounded-full transition-colors"
           onClick={() => setIsVisible(false)}
         >
           <span className="sr-only">Dismiss</span>

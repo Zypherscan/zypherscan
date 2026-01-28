@@ -13,7 +13,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Balance - Empty */}
-        <Card className="bg-card/30 backdrop-blur-sm p-6 border-border/50">
+        <Card className="bg-card/30 p-6 border-border/50">
           <div className="flex items-center justify-between mb-4">
             <Wallet className="w-6 h-6 text-muted-foreground" />
             <span className="text-xs text-muted-foreground font-medium px-2 py-1 bg-secondary rounded-full">
@@ -27,7 +27,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
         </Card>
 
         {/* Shielded Balance - Empty */}
-        <Card className="bg-card/30 backdrop-blur-sm p-6 border-border/50">
+        <Card className="bg-card/30 p-6 border-border/50">
           <div className="flex items-center justify-between mb-4">
             <Shield className="w-6 h-6 text-muted-foreground" />
             <span className="text-xs text-muted-foreground font-medium">
@@ -41,7 +41,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
         </Card>
 
         {/* Pool Breakdown - Empty */}
-        <Card className="bg-card/30 backdrop-blur-sm p-6 border-border/50">
+        <Card className="bg-card/30 p-6 border-border/50">
           <div className="flex items-center justify-between mb-4">
             <Layers className="w-6 h-6 text-muted-foreground" />
             <span className="text-xs text-muted-foreground font-medium">
@@ -61,7 +61,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
         </Card>
 
         {/* Pending - Empty */}
-        <Card className="bg-card/30 backdrop-blur-sm p-6 border-border/50">
+        <Card className="bg-card/30 p-6 border-border/50">
           <div className="flex items-center justify-between mb-4">
             <Clock className="w-6 h-6 text-muted-foreground" />
             <span className="text-xs text-muted-foreground font-medium">
@@ -80,7 +80,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total Balance */}
-      <Card className="card-glow bg-gradient-to-br from-accent/20 via-card to-card p-6 border-accent/30">
+      <Card className="card-glow bg-gradient-to-br from-accent/20 via-card/40 to-card/40 p-6 border-accent/30">
         <div className="flex items-center justify-between mb-4">
           <Wallet className="w-6 h-6 text-accent" />
           <span className="text-xs text-accent font-medium px-2 py-1 bg-accent/20 rounded-full">
@@ -94,7 +94,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
       </Card>
 
       {/* Shielded Balance */}
-      <Card className="card-glow bg-card/50 backdrop-blur-sm p-6 border-accent/10">
+      <Card className="card-glow bg-card/50 p-6 border-accent/10">
         <div className="flex items-center justify-between mb-4">
           <Shield className="w-6 h-6 text-terminal-green" />
           <span className="text-xs text-terminal-green font-medium">
@@ -108,7 +108,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
       </Card>
 
       {/* Pool Breakdown */}
-      <Card className="card-glow bg-card/50 backdrop-blur-sm p-6 border-accent/10">
+      <Card className="card-glow bg-card/50 p-6 border-accent/10">
         <div className="flex items-center justify-between mb-4">
           <Layers className="w-6 h-6 text-purple-400" />
           <span className="text-xs text-purple-400 font-medium">Pools</span>
@@ -130,7 +130,7 @@ export function BalanceCard({ balance }: BalanceCardProps) {
       </Card>
 
       {/* Pending */}
-      <Card className="card-glow bg-card/50 backdrop-blur-sm p-6 border-accent/10">
+      <Card className="card-glow bg-card/50 p-6 border-accent/10">
         <div className="flex items-center justify-between mb-4">
           <Clock className="w-6 h-6 text-yellow-400" />
           <span className="text-xs text-yellow-400 font-medium">Pending</span>

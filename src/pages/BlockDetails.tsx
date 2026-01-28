@@ -273,14 +273,14 @@ const BlockDetails = () => {
         const totalValue =
           t.outputs?.reduce(
             (sum: number, out: any) => sum + (Number(out.value) || 0),
-            0
+            0,
           ) || 0;
 
         // Calculate fee with shielded value balance consideration
         const inputSum =
           t.inputs?.reduce(
             (sum: number, inp: any) => sum + (Number(inp.value) || 0),
-            0
+            0,
           ) || 0;
         const outputSum = totalValue;
 
@@ -372,14 +372,14 @@ const BlockDetails = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-20">
       <main className="container px-4 md:px-6 py-8 max-w-6xl mx-auto">
         {loading ? (
           <div className="space-y-6">
@@ -450,7 +450,7 @@ const BlockDetails = () => {
             </div>
 
             {/* Block Details Card */}
-            <Card className="bg-card border-border p-0 overflow-hidden">
+            <Card className="bg-card/50 border-white/10 p-0 overflow-hidden">
               <div className="p-6 space-y-6">
                 {/* Timestamp */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b border-gray-800/50 pb-4">
@@ -632,7 +632,7 @@ const BlockDetails = () => {
                 </Badge>
               </div>
 
-              <Card className="bg-card border-border overflow-hidden">
+              <Card className="bg-card/50 border-white/10 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <thead className="bg-muted/40 text-muted-foreground text-xs uppercase font-medium border-b border-border">
@@ -705,19 +705,19 @@ const BlockDetails = () => {
                                     tx.type === "coinbase"
                                       ? "bg-terminal-green/10 text-terminal-green border-terminal-green/20"
                                       : tx.type === "shielded"
-                                      ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
-                                      : tx.type === "mixed"
-                                      ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                                      : "bg-gray-800 text-gray-400 border-gray-700 font-normal"
+                                        ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                                        : tx.type === "mixed"
+                                          ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                                          : "bg-gray-800 text-gray-400 border-gray-700 font-normal"
                                   }
                                 >
                                   {tx.type === "coinbase"
                                     ? "COINBASE"
                                     : tx.type === "shielded"
-                                    ? "SHIELDED"
-                                    : tx.type === "mixed"
-                                    ? "MIXED"
-                                    : "Regular"}
+                                      ? "SHIELDED"
+                                      : tx.type === "mixed"
+                                        ? "MIXED"
+                                        : "Regular"}
                                 </Badge>
                               </td>
                               <td className="px-6 py-4">

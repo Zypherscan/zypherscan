@@ -26,7 +26,7 @@ interface PoolDistributionProps {
 export function PoolDistribution({ analytics }: PoolDistributionProps) {
   if (!analytics) {
     return (
-      <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10 p-6 h-80 flex items-center justify-center">
+      <Card className="card-glow bg-card/50 border-accent/10 p-6 h-80 flex items-center justify-center">
         <p className="text-muted-foreground">No distribution data available</p>
       </Card>
     );
@@ -118,7 +118,7 @@ export function PoolDistribution({ analytics }: PoolDistributionProps) {
   };
 
   return (
-    <Card className="card-glow bg-card/50 backdrop-blur-sm border-accent/10">
+    <Card className="card-glow bg-card/50 border-accent/10">
       <div className="p-6 border-b border-border">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <Layers className="w-5 h-5 text-accent" />

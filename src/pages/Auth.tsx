@@ -26,7 +26,7 @@ const viewingKeySchema = z
     {
       message:
         "Invalid viewing key format. Must start with 'uview', 'zview', 'utest', or 'ztest'",
-    }
+    },
   );
 
 const Auth = () => {
@@ -155,7 +155,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col px-6 py-12">
+    <div className="min-h-screen flex flex-col px-6 py-12">
       <div className="container mx-auto max-w-5xl flex-1 flex flex-col justify-center">
         <Button
           variant="ghost"

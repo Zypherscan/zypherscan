@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useWalletData } from "@/hooks/useWalletData";
-import { useZcashAPI, NetworkStats, ZecPrice } from "@/hooks/useZcashAPI";
+import { useZcashAPI, NetworkStats, Block } from "@/hooks/useZcashAPI";
+import { useNetwork } from "@/contexts/NetworkContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import { MarketStatsBanner } from "@/components/MarketStatsBanner";
 import { formatZEC, formatZECWithSymbol } from "@/lib/zcash-crypto";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { TransactionList } from "@/components/dashboard/TransactionList";
+import { NetworkCharts } from "@/components/NetworkCharts";
 import { AnalyticsCharts } from "@/components/dashboard/AnalyticsCharts";
 import { PoolDistribution } from "@/components/dashboard/PoolDistribution";
 import { QuickStats } from "@/components/dashboard/QuickStats";
@@ -76,10 +78,17 @@ const Dashboard = () => {
     syncStatus,
   } = useWalletData();
 
-  const { getZecPrice, getNetworkStatus, getPrivacyStats } = useZcashAPI();
-  const [zecPrice, setZecPrice] = useState<ZecPrice | null>(null);
+  const { getNetworkStatus, getPrivacyStats, getLatestBlocks } = useZcashAPI();
+  const { zecPrice: contextZecPrice } = useNetwork();
+
+  // Use price from NetworkContext
+  const zecPrice = contextZecPrice
+    ? { usd: contextZecPrice.usd, usd_24h_change: contextZecPrice.change24h }
+    : null;
+
   const [networkStats, setNetworkStats] = useState<NetworkStats | null>(null);
   const [privacyStats, setPrivacyStats] = useState<any | null>(null);
+  const [recentBlocks, setRecentBlocks] = useState<Block[]>([]);
 
   const [isRescanOpen, setIsRescanOpen] = useState(false);
   const [rescanHeight, setRescanHeight] = useState("");
@@ -92,12 +101,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchMarketData = async () => {
-      const price = await getZecPrice();
-      setZecPrice(price);
       const network = await getNetworkStatus();
       setNetworkStats(network);
       const privacy = await getPrivacyStats();
       setPrivacyStats(privacy);
+      const blocks = await getLatestBlocks(50);
+      setRecentBlocks(blocks);
     };
 
     if (isConnected && !syncStatus.isSyncing) {
@@ -105,13 +114,7 @@ const Dashboard = () => {
       const interval = setInterval(fetchMarketData, 120000); // Update every 2 minutes
       return () => clearInterval(interval);
     }
-  }, [
-    isConnected,
-    getZecPrice,
-    getNetworkStatus,
-    getPrivacyStats,
-    syncStatus.isSyncing,
-  ]);
+  }, [isConnected, getNetworkStatus, getPrivacyStats, syncStatus.isSyncing]);
 
   const handleRescan = () => {
     if (rescanHeight) {
@@ -130,7 +133,7 @@ const Dashboard = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading...</p>
@@ -144,7 +147,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Main Content */}
       <main className="container px-6 py-8">
         {/* Page Header */}
@@ -314,10 +317,8 @@ const Dashboard = () => {
           <div className="space-y-6">
             {/* Balance Cards */}
             <BalanceCard balance={balance} />
-
             {/* Quick Stats */}
             <QuickStats analytics={analytics} transactions={transactions} />
-
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
@@ -327,7 +328,11 @@ const Dashboard = () => {
                 <PoolDistribution analytics={analytics} />
               </div>
             </div>
-
+            {/* Global Network Insights */}
+            {/* Global Network Insights */}
+            <div className="grid grid-cols-1 gap-6">
+              <NetworkCharts blocks={recentBlocks} />
+            </div>
             {/* Transaction History and Address Book Tabs */}
             <Tabs defaultValue="transactions" className="space-y-4">
               <TabsList className="bg-card/50 border border-accent/10">
