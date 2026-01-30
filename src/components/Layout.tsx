@@ -332,6 +332,9 @@ export const Layout = ({ children }: LayoutProps) => {
                 <DropdownMenuItem onClick={() => navigate("/privacy")}>
                   Privacy Stats
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/price")}>
+                  Price Charts
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/decrypt")}>
                   Decrypt Tool
                 </DropdownMenuItem>
@@ -522,6 +525,16 @@ export const Layout = ({ children }: LayoutProps) => {
                     </button>
                     <button
                       onClick={() => {
+                        navigate("/price");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/80 hover:text-foreground hover:bg-accent/5 rounded-md transition-colors text-left"
+                    >
+                      <TrendingUp className="w-4 h-4 text-accent" />
+                      Price Charts
+                    </button>
+                    <button
+                      onClick={() => {
                         navigate("/decrypt");
                         setIsMobileMenuOpen(false);
                       }}
@@ -615,6 +628,12 @@ export const Layout = ({ children }: LayoutProps) => {
                   className="hover:text-accent transition-colors"
                 >
                   Privacy
+                </Link>
+                <Link
+                  to="/price"
+                  className="hover:text-accent transition-colors"
+                >
+                  Price
                 </Link>
               </div>
 

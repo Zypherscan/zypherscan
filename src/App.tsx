@@ -16,6 +16,7 @@ import NetworkStatus from "./pages/NetworkStatus";
 import RecentBlocks from "./pages/RecentBlocks";
 import ZECFlow from "./pages/ZECFlow";
 import NotFound from "./pages/NotFound";
+import Price from "./pages/Price";
 
 import { Layout } from "./components/Layout";
 import { NetworkProvider } from "@/contexts/NetworkContext";
@@ -43,6 +44,7 @@ const App = () => (
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/privacy" element={<PrivacyDashboard />} />
+                    <Route path="/price" element={<Price />} />
                     <Route path="/tx/:txid" element={<TransactionDetails />} />
                     <Route path="/block/:height" element={<BlockDetails />} />
                     <Route
